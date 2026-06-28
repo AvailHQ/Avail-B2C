@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useMutation, useQuery } from 'convex/react';
-import { api } from '../convex/_generated/api';
 import confetti from 'canvas-confetti';
 import {
   Zap,
@@ -33,6 +31,22 @@ interface UserInfo {
 }
 
 const GITHUB_CLIENT_ID = 'Ov23liccG0IvKASKtqNn';
+const WAITLIST_STORAGE_KEY = 'avail_waitlist_users';
+
+const loadWaitlist = (): UserInfo[] => {
+  try {
+    const saved = window.localStorage.getItem(WAITLIST_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveWaitlist = (users: UserInfo[]) => {
+  window.localStorage.setItem(WAITLIST_STORAGE_KEY, JSON.stringify(users));
+};
+
+const createReferralCode = () => Math.random().toString(36).slice(2, 8).toUpperCase();
 
 export default function App() {
   const [status, setStatus] = useState<'join' | 'success' | 'check'>('join');
@@ -40,18 +54,11 @@ export default function App() {
   const [email, setEmail] = useState('');
   const [referredByCode, setReferredByCode] = useState('');
   const [checkEmail, setCheckEmail] = useState('');
-  const [searchEmail, setSearchEmail] = useState<string | null>(null);
+  const [totalSignups, setTotalSignups] = useState(() => loadWaitlist().length);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [joinedUser, setJoinedUser] = useState<UserInfo | null>(null);
   const [copied, setCopied] = useState(false);
-
-  const joinWaitlist = useMutation(api.waitlist.join);
-  const stats = useQuery(api.waitlist.getStats);
-  const checkStatusResult = useQuery(
-    api.waitlist.checkPosition,
-    searchEmail ? { email: searchEmail } : 'skip'
-  );
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -64,21 +71,6 @@ export default function App() {
       handleGitHubCallback(code);
     }
   }, []);
-
-  useEffect(() => {
-    if (searchEmail && checkStatusResult !== undefined) {
-      setLoading(false);
-      if (checkStatusResult.found && checkStatusResult.user) {
-        setJoinedUser(checkStatusResult.user as UserInfo);
-        setStatus('success');
-        setError(null);
-        fireConfetti();
-      } else {
-        setError("We couldn't find that email. Check the spelling or register below.");
-      }
-      setSearchEmail(null);
-    }
-  }, [checkStatusResult, searchEmail]);
 
   const fireConfetti = () => {
     confetti({ particleCount: 180, spread: 90, origin: { y: 0.55 }, colors: ['#6FBF9E', '#4FA3C7', '#ffffff', '#b7e3d4'] });
@@ -106,20 +98,45 @@ export default function App() {
     setLoading(true);
     setError(null);
     try {
-      const res = await joinWaitlist({
-        name: name.trim(),
-        email: email.trim(),
-        referredByCode: referredByCode || undefined,
-      });
-      if (res.success && res.user) {
-        setJoinedUser(res.user as UserInfo);
+      const users = loadWaitlist();
+      const normalizedEmail = email.trim().toLowerCase();
+      const existing = users.find(user => user.email === normalizedEmail);
+
+      if (existing) {
+        setJoinedUser(existing);
         setStatus('success');
         fireConfetti();
-      } else {
-        setError('Something went wrong. Please try again.');
+        return;
       }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred. Please try again.');
+
+      const referrer = referredByCode
+        ? users.find(user => user.referralCode === referredByCode.trim().toUpperCase())
+        : undefined;
+
+      const updatedUsers = referrer
+        ? users.map(user => user._id === referrer._id
+          ? { ...user, referralCount: user.referralCount + 1, queuePosition: Math.max(1, user.queuePosition - 10) }
+          : user)
+        : users;
+
+      const user: UserInfo = {
+        _id: crypto.randomUUID(),
+        name: name.trim(),
+        email: normalizedEmail,
+        referralCode: createReferralCode(),
+        referredBy: referrer?.referralCode,
+        referralCount: 0,
+        queuePosition: updatedUsers.length + 1,
+      };
+
+      const nextUsers = [...updatedUsers, user];
+      saveWaitlist(nextUsers);
+      setTotalSignups(nextUsers.length);
+      setJoinedUser(user);
+      setStatus('success');
+      fireConfetti();
+    } catch {
+      setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -130,7 +147,16 @@ export default function App() {
     if (!checkEmail.trim()) { setError('Please enter your email.'); return; }
     setLoading(true);
     setError(null);
-    setSearchEmail(checkEmail.trim());
+    const normalizedEmail = checkEmail.trim().toLowerCase();
+    const user = loadWaitlist().find(entry => entry.email === normalizedEmail);
+    setLoading(false);
+    if (user) {
+      setJoinedUser(user);
+      setStatus('success');
+      fireConfetti();
+    } else {
+      setError("We couldn't find that email. Check the spelling or register below.");
+    }
   };
 
   const handleCopy = () => {
@@ -194,9 +220,9 @@ export default function App() {
             Avail is built for the modern female athlete — unifying training schedules, team availability, recovery tracking and performance insights into a single, intelligent command centre.
           </p>
 
-          {stats?.totalSignups !== undefined && stats.totalSignups > 0 ? (
+          {totalSignups > 0 ? (
             <div className="hero-live-count fade-up fade-up-delay-3">
-              {stats.totalSignups} athletes have already secured early access
+              {totalSignups} athletes have already secured early access
             </div>
           ) : (
             <div className="hero-live-count fade-up fade-up-delay-3">

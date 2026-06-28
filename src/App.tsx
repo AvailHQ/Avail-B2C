@@ -18,7 +18,7 @@ import {
   Activity,
   Shield,
   ChevronRight,
-  Github,
+  GitBranch,
 } from 'lucide-react';
 import './App.css';
 
@@ -173,7 +173,7 @@ export default function App() {
               </button>
             )}
             <button className="nav-pill nav-pill-primary" onClick={handleGitHubOAuth}>
-              <Github size={14} /> Sign in with GitHub
+              <GitBranch size={14} /> Sign in with GitHub
             </button>
           </div>
         </nav>
@@ -268,7 +268,7 @@ export default function App() {
 
                 {/* GitHub button */}
                 <button id="github-signin-btn" className="github-btn" onClick={handleGitHubOAuth}>
-                  <Github size={18} />
+                  <GitBranch size={18} />
                   Continue with GitHub
                 </button>
 

@@ -871,6 +871,18 @@
 .footer-link:hover { color: var(--color-text-primary); }
 
 /* =============================================
+   FAQ STYLING
+   ============================================= */
+.faq-item {
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.faq-item:hover {
+  border-color: var(--color-border-strong);
+}
+
+/* =============================================
    RESPONSIVE
    ============================================= */
 @media (max-width: 900px) {

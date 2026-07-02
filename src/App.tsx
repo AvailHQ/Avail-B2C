@@ -17,6 +17,11 @@ import {
   Shield,
   ChevronRight,
   GitBranch,
+  TrendingUp,
+  Zap as ZapIcon,
+  Database,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import './App.css';
 
@@ -59,6 +64,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [joinedUser, setJoinedUser] = useState<UserInfo | null>(null);
   const [copied, setCopied] = useState(false);
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -208,43 +214,79 @@ export default function App() {
         <section className="hero-section">
           <div className="hero-badge fade-up">
             <div className="hero-badge-dot" />
-            Exclusively for female athletes
+            Built on female physiology
           </div>
 
           <h1 className="hero-title fade-up fade-up-delay-1">
-            Your Performance,<br />
-            <span className="gradient-text">Finally Available</span>
+            Be Stronger.<br />
+            <span className="gradient-text">Train Smarter.</span>
           </h1>
 
           <p className="hero-sub fade-up fade-up-delay-2">
-            Avail is built for the modern female athlete — unifying training schedules, team availability, recovery tracking and performance insights into a single, intelligent command centre.
+            The first performance app designed around female physiology and women's training data. Train with your cycle, not against it.
           </p>
 
           {totalSignups > 0 ? (
             <div className="hero-live-count fade-up fade-up-delay-3">
-              {totalSignups} athletes have already secured early access
+              {totalSignups} women have already secured early access
             </div>
           ) : (
             <div className="hero-live-count fade-up fade-up-delay-3">
-              Be among the first athletes to get access
+              Be among the first to get access
             </div>
           )}
 
           <div className="stats-row fade-up fade-up-delay-3">
             <div className="stat-item">
-              <span className="stat-value gradient-text">100%</span>
-              <span className="stat-label">Built for women</span>
+              <span className="stat-value gradient-text">500+</span>
+              <span className="stat-label">Beta users</span>
             </div>
             <div className="stat-divider" />
             <div className="stat-item">
-              <span className="stat-value gradient-text">50ms</span>
-              <span className="stat-label">Command response</span>
+              <span className="stat-value gradient-text">+18%</span>
+              <span className="stat-label">Performance gain</span>
             </div>
             <div className="stat-divider" />
             <div className="stat-item">
-              <span className="stat-value gradient-text">Q3 '26</span>
-              <span className="stat-label">Early access launch</span>
+              <span className="stat-value gradient-text">95%</span>
+              <span className="stat-label">Retention rate</span>
             </div>
+          </div>
+        </section>
+
+        {/* ── Why Women Need This ─────────────────────── */}
+        <section className="features-section" style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
+          <div className="section-header">
+            <h2 className="section-title">Why Women Need a Different App</h2>
+            <p className="section-sub">
+              Generic training apps ignore how your body actually works. Avail changes that.
+            </p>
+          </div>
+
+          <div className="features-grid">
+            {[
+              {
+                icon: <ZapIcon size={22} />,
+                name: 'Generic Apps Miss Female Biology',
+                desc: 'Standard training apps ignore your hormonal cycle. Your body responds differently throughout the month — we account for that.',
+              },
+              {
+                icon: <TrendingUp size={22} />,
+                name: 'Load Management Matters More',
+                desc: 'Smart load management prevents injury and maximizes gains. Your body needs intelligent recovery planning.',
+              },
+              {
+                icon: <Database size={22} />,
+                name: "Women's Data is Missing",
+                desc: '98% of training research focuses on men. We\'re building the first female-first training database backed by women\'s science.',
+              },
+            ].map((f, i) => (
+              <div key={i} className="feature-card">
+                <div className="feature-icon-box">{f.icon}</div>
+                <h3 className="feature-name">{f.name}</h3>
+                <p className="feature-desc">{f.desc}</p>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -558,9 +600,133 @@ export default function App() {
           </div>
         </section>
 
+        {/* ── How It Works ───────────────────────────── */}
+        <section className="features-section" style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
+          <div className="section-header">
+            <h2 className="section-title">Get Started in 3 Steps</h2>
+            <p className="section-sub">Simple. Science-backed. Powerful.</p>
+          </div>
+
+          <div className="features-grid">
+            {[
+              {
+                icon: <User size={22} />,
+                name: 'Sync Your Data',
+                desc: 'Connect your calendar, wearables, and training history. Avail learns your personal patterns in minutes.',
+              },
+              {
+                icon: <Activity size={22} />,
+                name: 'Get Personalized Guidance',
+                desc: 'AI-powered training plans adapt to your cycle and recovery. Smart notifications keep you on track.',
+              },
+              {
+                icon: <TrendingUp size={22} />,
+                name: 'Optimize & Improve',
+                desc: 'Track progress with female-specific metrics. Watch your performance and confidence grow.',
+              },
+            ].map((f, i) => (
+              <div key={i} className="feature-card">
+                <div className="feature-icon-box">{f.icon}</div>
+                <h3 className="feature-name">{f.name}</h3>
+                <p className="feature-desc">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Gym Benefits ─────────────────────────── */}
+        <section className="features-section" style={{ paddingTop: '3rem', paddingBottom: '3rem', background: 'linear-gradient(180deg, var(--color-bg-secondary) 0%, var(--color-bg-primary) 100%)' }}>
+          <div className="section-header">
+            <h2 className="section-title">Perfect for Gym Communities</h2>
+            <p className="section-sub">Empower your female members with cycle-informed training</p>
+          </div>
+
+          <div className="features-grid">
+            {[
+              {
+                icon: <Users size={22} />,
+                name: 'Empower Your Female Members',
+                desc: 'Retain members with cycle-informed training. Reduce injury rates with smart load management. Build loyalty.',
+              },
+              {
+                icon: <TrendingUp size={22} />,
+                name: 'Data Insights for Operations',
+                desc: 'Understand female member preferences. Optimize class scheduling around female physiology. Build targeted programs.',
+              },
+              {
+                icon: <Share2 size={22} />,
+                name: 'Community Integration',
+                desc: 'Members form accountability groups. Leaderboards, challenges, and milestones. Build female-focused performance culture.',
+              },
+            ].map((f, i) => (
+              <div key={i} className="feature-card">
+                <div className="feature-icon-box">{f.icon}</div>
+                <h3 className="feature-name">{f.name}</h3>
+                <p className="feature-desc">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── FAQ Section ────────────────────────────── */}
+        <section className="features-section" style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
+          <div className="section-header">
+            <h2 className="section-title">Frequently Asked Questions</h2>
+            <p className="section-sub">Everything you need to know</p>
+          </div>
+
+          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+            {[
+              {
+                q: 'What makes Avail different from other fitness apps?',
+                a: 'Avail is the first performance app specifically designed around female physiology. Every feature—from training programming to load management—is built on women\'s data and hormonal science, not generic fitness trends.'
+              },
+              {
+                q: 'How does the cycle tracking work? Do I have to sync my calendar?',
+                a: 'Cycle tracking is optional and fully private. You can sync your calendar, log manually, or connect wearables. All tracking is encrypted and never shared.'
+              },
+              {
+                q: 'What if I don\'t have a regular cycle or use hormonal contraception?',
+                a: 'Avail works for everyone. Hormonal contraception changes your cycle patterns—we account for that. Irregular cycles? We adapt. The app\'s recovery and load management features still apply.'
+              },
+              {
+                q: 'Can I use Avail without a gym membership?',
+                a: 'Absolutely. Avail works with any training environment—gyms, home workouts, sports. While we partner with gyms, the core app is designed for independent users too.'
+              },
+              {
+                q: 'What data do you collect and how is it used?',
+                a: 'We collect training data and optional cycle information to power personalized recommendations. Your data is encrypted, private, and never sold. We use aggregate data to improve our female-focused training algorithms.'
+              },
+              {
+                q: 'When will the full app launch?',
+                a: 'We\'re launching in Q4 2026. Early access members get the app 4 weeks before public launch, plus a lifetime discount. You\'ll shape the app with your feedback during beta.'
+              },
+            ].map((item, i) => (
+              <div
+                key={i}
+                className="feature-card"
+                style={{ marginBottom: '1rem', cursor: 'pointer' }}
+                onClick={() => setExpandedFaq(expandedFaq === i ? null : i)}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+                  <h3 className="feature-name" style={{ margin: 0 }}>{item.q}</h3>
+                  {expandedFaq === i ? (
+                    <ChevronUp size={20} style={{ flexShrink: 0, color: 'var(--color-gradient-start)' }} />
+                  ) : (
+                    <ChevronDown size={20} style={{ flexShrink: 0, color: 'var(--color-text-secondary)' }} />
+                  )}
+                </div>
+                {expandedFaq === i && (
+                  <p className="feature-desc" style={{ marginTop: '1rem', marginBottom: 0 }}>{item.a}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+
         {/* ── Footer ─────────────────────────────────── */}
         <footer className="footer">
-          <div>© 2026 Avail. Built for female athletes.</div>
+          <div>© 2026 Avail. Built on female physiology.</div>
           <div className="footer-links">
             <a href="#" className="footer-link">Privacy</a>
             <a href="#" className="footer-link">Terms</a>

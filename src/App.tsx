@@ -1,39 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
 import confetti from 'canvas-confetti';
 import {
-  Zap,
-  Users,
-  CheckCircle2,
-  Copy,
-  Check,
-  Share2,
-  ArrowRight,
-  Mail,
-  User,
-  RefreshCw,
-  AlertTriangle,
-  Calendar,
   Activity,
-  Shield,
-  ChevronRight,
-  GitBranch,
-  TrendingUp,
-  Zap as ZapIcon,
+  Calendar,
   Database,
-  ChevronDown,
-  ChevronUp,
+  Share2,
+  Shield,
+  TrendingUp,
+  User,
+  Users,
+  Zap,
 } from 'lucide-react';
-import './App.css';
-
-interface UserInfo {
-  _id: string;
-  name: string;
-  email: string;
-  referralCode: string;
-  referredBy?: string;
-  referralCount: number;
-  queuePosition: number;
-}
+import { EarlyAccessSection } from './components/landing/EarlyAccessSection';
+import { FAQSection } from './components/landing/FAQSection';
+import { FeaturesSection } from './components/landing/FeaturesSection';
+import { Footer } from './components/landing/Footer';
+import { GymBenefitsSection } from './components/landing/GymBenefitsSection';
+import { Header } from './components/landing/Header';
+import { HeroSection } from './components/landing/HeroSection';
+import { SocialProofSection } from './components/landing/SocialProofSection';
+import { StepsSection } from './components/landing/StepsSection';
+import { WhySection } from './components/landing/WhySection';
+import { PrivacyPage } from './pages/PrivacyPage';
+import { TermsPage } from './pages/TermsPage';
+import type { UserInfo } from './types';
 
 const GITHUB_CLIENT_ID = 'Ov23liccG0IvKASKtqNn';
 const WAITLIST_STORAGE_KEY = 'avail_waitlist_users';
@@ -53,13 +44,155 @@ const saveWaitlist = (users: UserInfo[]) => {
 
 const createReferralCode = () => Math.random().toString(36).slice(2, 8).toUpperCase();
 
-export default function App() {
+const femaleBiologyFeatures = [
+  {
+    icon: <Zap size={22} />,
+    name: 'Generic Apps Miss Female Biology',
+    desc: 'Standard training apps ignore your hormonal cycle. Your body responds differently throughout the month - we account for that.',
+  },
+  {
+    icon: <TrendingUp size={22} />,
+    name: 'Load Management Matters More',
+    desc: 'Smart load management prevents injury and maximizes gains. Your body needs intelligent recovery planning.',
+  },
+  {
+    icon: <Database size={22} />,
+    name: "Women's Data is Missing",
+    desc: "98% of training research focuses on men. We're building the first female-first training database backed by women's science.",
+  },
+];
+
+const perks = [
+  { icon: <Zap size={14} />, text: 'Priority access before public launch' },
+  { icon: <Activity size={14} />, text: 'Free premium tier for first 500 members' },
+  { icon: <Calendar size={14} />, text: 'Early influence on product features' },
+  { icon: <Shield size={14} />, text: 'Founding athlete badge on your profile' },
+  { icon: <Users size={14} />, text: 'Refer friends - jump 10 spots per referral' },
+];
+
+const appFeatures = [
+  {
+    icon: <Calendar size={22} />,
+    name: 'Smart Schedule',
+    desc: 'Unify training sessions, matches, physio appointments and rest days into a single adaptive calendar you can search in seconds.',
+  },
+  {
+    icon: <Users size={22} />,
+    name: 'Team Availability',
+    desc: "See who's available, injured, or travelling at a glance. Coordinate squad logistics without the endless group chat noise.",
+  },
+  {
+    icon: <Activity size={22} />,
+    name: 'Recovery Insights',
+    desc: 'Track load, HRV, sleep quality and injury history. Avail learns your patterns and flags when you need more recovery time.',
+  },
+  {
+    icon: <Zap size={22} />,
+    name: 'Command Mode',
+    desc: 'Press Cmd+K and ask anything - "Who\'s free Saturday?", "Show last week\'s sessions", "Book physio". Instant answers.',
+  },
+  {
+    icon: <Shield size={22} />,
+    name: 'Private by Design',
+    desc: 'Your health and performance data belongs to you. Granular controls over what you share, with coaches and with your team.',
+  },
+  {
+    icon: <Share2 size={22} />,
+    name: 'Integrations',
+    desc: 'Connects with Strava, Garmin, MyFitnessPal, Notion, Google Calendar and more - wherever your athletic life already lives.',
+  },
+];
+
+const steps = [
+  {
+    icon: <User size={22} />,
+    name: 'Sync Your Data',
+    desc: 'Connect your calendar, wearables, and training history. Avail learns your personal patterns in minutes.',
+  },
+  {
+    icon: <Activity size={22} />,
+    name: 'Get Personalized Guidance',
+    desc: 'AI-powered training plans adapt to your cycle and recovery. Smart notifications keep you on track.',
+  },
+  {
+    icon: <TrendingUp size={22} />,
+    name: 'Optimize & Improve',
+    desc: 'Track progress with female-specific metrics. Watch your performance and confidence grow.',
+  },
+];
+
+const gymBenefits = [
+  {
+    icon: <Users size={22} />,
+    name: 'Empower Your Female Members',
+    desc: 'Retain members with cycle-informed training. Reduce injury rates with smart load management. Build loyalty.',
+  },
+  {
+    icon: <TrendingUp size={22} />,
+    name: 'Data Insights for Operations',
+    desc: 'Understand female member preferences. Optimize class scheduling around female physiology. Build targeted programs.',
+  },
+  {
+    icon: <Share2 size={22} />,
+    name: 'Community Integration',
+    desc: 'Members form accountability groups. Leaderboards, challenges, and milestones. Build female-focused performance culture.',
+  },
+];
+
+const quotes = [
+  {
+    text: "I spend more time coordinating my calendar than I do training. Avail looks like the solution I've been waiting for.",
+    name: 'Mia R.',
+    role: 'Semi-pro footballer · Manchester',
+    initial: 'M',
+  },
+  {
+    text: 'As a captain, managing team availability is a full-time job. I need something that actually understands athlete schedules.',
+    name: 'Priya S.',
+    role: 'University rugby captain · Leeds',
+    initial: 'P',
+  },
+  {
+    text: "Every app I've tried was built for men and adapted badly. The fact that Avail is built from scratch for us means everything.",
+    name: 'Zara T.',
+    role: 'Track & field athlete · London',
+    initial: 'Z',
+  },
+];
+
+const faqs = [
+  {
+    q: 'What makes Avail different from other fitness apps?',
+    a: "Avail is the first performance app specifically designed around female physiology. Every feature - from training programming to load management - is built on women's data and hormonal science, not generic fitness trends.",
+  },
+  {
+    q: 'How does the cycle tracking work? Do I have to sync my calendar?',
+    a: 'Cycle tracking is optional and fully private. You can sync your calendar, log manually, or connect wearables. All tracking is encrypted and never shared.',
+  },
+  {
+    q: "What if I don't have a regular cycle or use hormonal contraception?",
+    a: "Avail works for everyone. Hormonal contraception changes your cycle patterns - we account for that. Irregular cycles? We adapt. The app's recovery and load management features still apply.",
+  },
+  {
+    q: 'Can I use Avail without a gym membership?',
+    a: 'Absolutely. Avail works with any training environment - gyms, home workouts, sports. While we partner with gyms, the core app is designed for independent users too.',
+  },
+  {
+    q: 'What data do you collect and how is it used?',
+    a: 'We collect training data and optional cycle information to power personalized recommendations. Your data is encrypted, private, and never sold. We use aggregate data to improve our female-focused training algorithms.',
+  },
+  {
+    q: 'When will the full app launch?',
+    a: "We're launching in Q4 2026. Early access members get the app 4 weeks before public launch, plus a lifetime discount. You'll shape the app with your feedback during beta.",
+  },
+];
+
+function LandingPage() {
   const [status, setStatus] = useState<'join' | 'success' | 'check'>('join');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [referredByCode, setReferredByCode] = useState('');
   const [checkEmail, setCheckEmail] = useState('');
-  const [totalSignups, setTotalSignups] = useState(() => loadWaitlist().length);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [joinedUser, setJoinedUser] = useState<UserInfo | null>(null);
@@ -71,7 +204,6 @@ export default function App() {
     const ref = params.get('ref');
     if (ref) setReferredByCode(ref.toUpperCase());
 
-    // Handle GitHub OAuth callback
     const code = params.get('code');
     if (code && !params.get('handled')) {
       handleGitHubCallback(code);
@@ -79,7 +211,12 @@ export default function App() {
   }, []);
 
   const fireConfetti = () => {
-    confetti({ particleCount: 180, spread: 90, origin: { y: 0.55 }, colors: ['#6FBF9E', '#4FA3C7', '#ffffff', '#b7e3d4'] });
+    confetti({
+      particleCount: 180,
+      spread: 90,
+      origin: { y: 0.55 },
+      colors: ['#6FBF9E', '#4FA3C7', '#ffffff', '#b7e3d4'],
+    });
   };
 
   const handleGitHubOAuth = () => {
@@ -89,24 +226,29 @@ export default function App() {
   };
 
   const handleGitHubCallback = async (code: string) => {
-    // In a real integration with Convex Auth, this would be handled automatically.
-    // For now, show the form with a note that GitHub auth will be fully wired once Convex Auth is configured.
     console.log('GitHub code received:', code);
-    // Clear the code from URL
     window.history.replaceState({}, document.title, '/');
   };
 
-  const handleJoin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim() || !email.trim()) { setError('Please fill in all fields.'); return; }
+  const handleJoin = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!name.trim() || !email.trim()) {
+      setError('Please fill in all fields.');
+      return;
+}
+
     const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRe.test(email)) { setError('Please enter a valid email address.'); return; }
+    if (!emailRe.test(email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
       const users = loadWaitlist();
       const normalizedEmail = email.trim().toLowerCase();
-      const existing = users.find(user => user.email === normalizedEmail);
+      const existing = users.find((user) => user.email === normalizedEmail);
 
       if (existing) {
         setJoinedUser(existing);
@@ -116,13 +258,15 @@ export default function App() {
       }
 
       const referrer = referredByCode
-        ? users.find(user => user.referralCode === referredByCode.trim().toUpperCase())
+        ? users.find((user) => user.referralCode === referredByCode.trim().toUpperCase())
         : undefined;
 
       const updatedUsers = referrer
-        ? users.map(user => user._id === referrer._id
-          ? { ...user, referralCount: user.referralCount + 1, queuePosition: Math.max(1, user.queuePosition - 10) }
-          : user)
+        ? users.map((user) =>
+            user._id === referrer._id
+              ? { ...user, referralCount: user.referralCount + 1, queuePosition: Math.max(1, user.queuePosition - 10) }
+              : user,
+          )
         : users;
 
       const user: UserInfo = {
@@ -137,7 +281,6 @@ export default function App() {
 
       const nextUsers = [...updatedUsers, user];
       saveWaitlist(nextUsers);
-      setTotalSignups(nextUsers.length);
       setJoinedUser(user);
       setStatus('success');
       fireConfetti();
@@ -148,14 +291,19 @@ export default function App() {
     }
   };
 
-  const handleCheckStatus = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!checkEmail.trim()) { setError('Please enter your email.'); return; }
+  const handleCheckStatus = (event: FormEvent) => {
+    event.preventDefault();
+    if (!checkEmail.trim()) {
+      setError('Please enter your email.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     const normalizedEmail = checkEmail.trim().toLowerCase();
-    const user = loadWaitlist().find(entry => entry.email === normalizedEmail);
+    const user = loadWaitlist().find((entry) => entry.email === normalizedEmail);
     setLoading(false);
+
     if (user) {
       setJoinedUser(user);
       setStatus('success');
@@ -172,568 +320,86 @@ export default function App() {
     setTimeout(() => setCopied(false), 2500);
   };
 
+  const handleShowCheck = () => {
+    setStatus('check');
+    setError(null);
+    setCheckEmail('');
+  };
+
+  const handleShowJoin = () => {
+    setStatus('join');
+    setError(null);
+  };
+
+  const handleRegisterAnother = () => {
+    setStatus('join');
+    setName('');
+    setEmail('');
+    setJoinedUser(null);
+    setError(null);
+  };
+
   const referralLink = joinedUser ? `${window.location.origin}?ref=${joinedUser.referralCode}` : '';
 
   return (
-    <div className="app-container">
-      {/* Ambient background blobs */}
-      <div className="bg-blob bg-blob-1" />
-      <div className="bg-blob bg-blob-2" />
-      <div className="bg-blob bg-blob-3" />
+    <div className="relative min-h-screen overflow-x-hidden bg-[#F7FAF8] text-[#1B1F23]">
+      <div className="blob-move pointer-events-none fixed -top-52 -right-24 z-0 size-[600px] rounded-full bg-[#6FBF9E]/12 blur-[80px]" />
+      <div className="blob-move-reverse pointer-events-none fixed -bottom-24 -left-36 z-0 size-[500px] rounded-full bg-[#4FA3C7]/10 blur-[80px]" />
+      <div className="blob-move-delay pointer-events-none fixed top-[40%] left-[30%] z-0 size-[300px] rounded-full bg-[#6FBF9E]/8 blur-[80px]" />
 
-      <div className="content-layer">
-        {/* ── Navbar ─────────────────────────────────── */}
-        <nav className="navbar">
-          <div className="logo">
-            <div className="logo-mark">A</div>
-            Avail
-          </div>
-          <div className="nav-actions">
-            {status !== 'check' ? (
-              <button
-                className="nav-pill"
-                onClick={() => { setStatus('check'); setError(null); setCheckEmail(''); }}
-              >
-                Check Status <ChevronRight size={14} />
-              </button>
-            ) : (
-              <button
-                className="nav-pill"
-                onClick={() => { setStatus('join'); setError(null); }}
-              >
-                Register
-              </button>
-            )}
-            <button className="nav-pill nav-pill-primary" onClick={handleGitHubOAuth}>
-              <GitBranch size={14} /> Sign in with GitHub
-            </button>
-          </div>
-        </nav>
+      <Header />
 
-        {/* ── Hero ───────────────────────────────────── */}
-        <section className="hero-section">
-          <div className="hero-badge fade-up">
-            <div className="hero-badge-dot" />
-            Built on female physiology
-          </div>
-
-          <h1 className="hero-title fade-up fade-up-delay-1">
-            Be Stronger.<br />
-            <span className="gradient-text">Train Smarter.</span>
-          </h1>
-
-          <p className="hero-sub fade-up fade-up-delay-2">
-            The first performance app designed around female physiology and women's training data. Train with your cycle, not against it.
-          </p>
-
-          {totalSignups > 0 ? (
-            <div className="hero-live-count fade-up fade-up-delay-3">
-              {totalSignups} women have already secured early access
-            </div>
-          ) : (
-            <div className="hero-live-count fade-up fade-up-delay-3">
-              Be among the first to get access
-            </div>
-          )}
-
-          <div className="stats-row fade-up fade-up-delay-3">
-            <div className="stat-item">
-              <span className="stat-value gradient-text">500+</span>
-              <span className="stat-label">Beta users</span>
-            </div>
-            <div className="stat-divider" />
-            <div className="stat-item">
-              <span className="stat-value gradient-text">+18%</span>
-              <span className="stat-label">Performance gain</span>
-            </div>
-            <div className="stat-divider" />
-            <div className="stat-item">
-              <span className="stat-value gradient-text">95%</span>
-              <span className="stat-label">Retention rate</span>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Why Women Need This ─────────────────────── */}
-        <section className="features-section" style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
-          <div className="section-header">
-            <h2 className="section-title">Why Women Need a Different App</h2>
-            <p className="section-sub">
-              Generic training apps ignore how your body actually works. Avail changes that.
-            </p>
-          </div>
-
-          <div className="features-grid">
-            {[
-              {
-                icon: <ZapIcon size={22} />,
-                name: 'Generic Apps Miss Female Biology',
-                desc: 'Standard training apps ignore your hormonal cycle. Your body responds differently throughout the month — we account for that.',
-              },
-              {
-                icon: <TrendingUp size={22} />,
-                name: 'Load Management Matters More',
-                desc: 'Smart load management prevents injury and maximizes gains. Your body needs intelligent recovery planning.',
-              },
-              {
-                icon: <Database size={22} />,
-                name: "Women's Data is Missing",
-                desc: '98% of training research focuses on men. We\'re building the first female-first training database backed by women\'s science.',
-              },
-            ].map((f, i) => (
-              <div key={i} className="feature-card">
-                <div className="feature-icon-box">{f.icon}</div>
-                <h3 className="feature-name">{f.name}</h3>
-                <p className="feature-desc">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ── Waitlist Section (Two Column) ──────────── */}
-        <section className="waitlist-section">
-          {/* Left column: pitch */}
-          <div className="waitlist-left fade-up">
-            <span className="section-label">Early Access Waitlist</span>
-            <h2 className="waitlist-heading">
-              Perform at your peak, every single day.
-            </h2>
-            <p className="waitlist-description">
-              Avail aggregates everything — training plans, match schedules, physiotherapy bookings, and team comms — giving you one frictionless space to manage your athletic life.
-            </p>
-
-            <ul className="perks-list">
-              {[
-                { icon: <Zap size={14} />, text: 'Priority access before public launch' },
-                { icon: <Activity size={14} />, text: 'Free premium tier for first 500 members' },
-                { icon: <Calendar size={14} />, text: 'Early influence on product features' },
-                { icon: <Shield size={14} />, text: 'Founding athlete badge on your profile' },
-                { icon: <Users size={14} />, text: 'Refer friends — jump 10 spots per referral' },
-              ].map((perk, i) => (
-                <li key={i} className="perk-item">
-                  <span className="perk-icon">{perk.icon}</span>
-                  {perk.text}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Right column: form card */}
-          <div className="glass-card fade-up fade-up-delay-1">
-
-            {error && (
-              <div className="alert-error">
-                <AlertTriangle size={16} style={{ flexShrink: 0 }} />
-                <span>{error}</span>
-              </div>
-            )}
-
-            {/* ── STATE: JOIN ─────────────────────── */}
-            {status === 'join' && (
-              <>
-                <h2 className="card-title">Claim your spot</h2>
-                <p className="card-desc">Sign up to secure early access and your unique referral link.</p>
-
-                {/* GitHub button */}
-                <button id="github-signin-btn" className="github-btn" onClick={handleGitHubOAuth}>
-                  <GitBranch size={18} />
-                  Continue with GitHub
-                </button>
-
-                <div className="divider">
-                  <div className="divider-line" />
-                  <span className="divider-text">or with email</span>
-                  <div className="divider-line" />
-                </div>
-
-                <form onSubmit={handleJoin} className="waitlist-form">
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="join-name">Full Name</label>
-                    <div className="input-wrapper">
-                      <User size={16} className="input-icon" />
-                      <input
-                        id="join-name"
-                        type="text"
-                        placeholder="Sara Lindon"
-                        value={name}
-                        onChange={e => setName(e.target.value)}
-                        className="form-input"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="join-email">Email Address</label>
-                    <div className="input-wrapper">
-                      <Mail size={16} className="input-icon" />
-                      <input
-                        id="join-email"
-                        type="email"
-                        placeholder="sara@example.com"
-                        value={email}
-                        onChange={e => setEmail(e.target.value)}
-                        className="form-input"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {referredByCode && (
-                    <div className="referral-tag">
-                      <Users size={14} />
-                      Referred by <strong>{referredByCode}</strong> — leapfrog boost active!
-                    </div>
-                  )}
-
-                  <button id="join-submit-btn" type="submit" disabled={loading} className="btn-primary">
-                    {loading
-                      ? <><RefreshCw className="animate-spin" size={16} /> Securing Spot…</>
-                      : <>Secure Early Access <ArrowRight size={16} /></>
-                    }
-                  </button>
-                </form>
-
-                <button className="btn-text" onClick={() => { setStatus('check'); setError(null); setCheckEmail(''); }}>
-                  Already registered? Check your position
-                </button>
-              </>
-            )}
-
-            {/* ── STATE: CHECK ────────────────────── */}
-            {status === 'check' && (
-              <>
-                <h2 className="card-title">Check your position</h2>
-                <p className="card-desc">Enter your registration email to retrieve your queue rank and share link.</p>
-
-                <form onSubmit={handleCheckStatus} className="waitlist-form">
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="check-email">Email Address</label>
-                    <div className="input-wrapper">
-                      <Mail size={16} className="input-icon" />
-                      <input
-                        id="check-email"
-                        type="email"
-                        placeholder="sara@example.com"
-                        value={checkEmail}
-                        onChange={e => setCheckEmail(e.target.value)}
-                        className="form-input"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <button id="check-submit-btn" type="submit" disabled={loading} className="btn-primary">
-                    {loading
-                      ? <><RefreshCw className="animate-spin" size={16} /> Searching…</>
-                      : <>Find My Spot <ArrowRight size={16} /></>
-                    }
-                  </button>
-                </form>
-
-                <button className="btn-text" onClick={() => { setStatus('join'); setError(null); }}>
-                  Back to registration
-                </button>
-              </>
-            )}
-
-            {/* ── STATE: SUCCESS ──────────────────── */}
-            {status === 'success' && joinedUser && (
-              <div className="success-wrapper">
-                <div className="success-icon">
-                  <CheckCircle2 size={40} />
-                </div>
-
-                <div>
-                  <h2 className="card-title">You're in, {joinedUser.name.split(' ')[0]}! 🎉</h2>
-                  <p className="card-desc" style={{ marginBottom: 0 }}>
-                    You're on the Avail waitlist. Refer other female athletes to climb the queue faster.
-                  </p>
-                </div>
-
-                <div className="rank-card">
-                  <div className="rank-cell">
-                    <span className="rank-num">#{joinedUser.queuePosition}</span>
-                    <span className="rank-lbl">Queue Rank</span>
-                  </div>
-                  <div className="rank-cell">
-                    <span className="rank-num">{joinedUser.referralCount}</span>
-                    <span className="rank-lbl">Referrals</span>
-                  </div>
-                  <div className="rank-cell">
-                    <span className="rank-num">+10</span>
-                    <span className="rank-lbl">Per Referral</span>
-                  </div>
-                </div>
-
-                <div style={{ width: '100%', textAlign: 'left' }}>
-                  <p style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.6rem', color: 'var(--color-text-primary)' }}>
-                    Your Referral Link
-                  </p>
-                  <div className="referral-link-row">
-                    <input className="referral-input" value={referralLink} readOnly title={referralLink} />
-                    <button className="btn-secondary" onClick={handleCopy}>
-                      {copied ? <Check size={15} /> : <Copy size={15} />}
-                      {copied ? 'Copied' : 'Copy'}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="share-grid">
-                  <a
-                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Just secured early access to @availapp — the platform built for female athletes 💪 Join me: ${referralLink}`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="share-btn"
-                  >
-                    <Share2 size={14} /> Share on X
-                  </a>
-                  <a
-                    href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(referralLink)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="share-btn"
-                  >
-                    <Users size={14} /> LinkedIn
-                  </a>
-                </div>
-
-                <button className="btn-text" onClick={() => { setStatus('join'); setName(''); setEmail(''); setJoinedUser(null); setError(null); }}>
-                  Register another athlete
-                </button>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* ── Features Section ───────────────────────── */}
-        <section className="features-section">
-          <div className="section-header">
-            <span className="section-label">What Avail Does</span>
-            <h2 className="section-title">Your whole athletic life,<br /><span className="gradient-text">in one place</span></h2>
-            <p className="section-sub">
-              Designed from the ground up for female athletes who are serious about performance, recovery, and team coordination.
-            </p>
-          </div>
-
-          <div className="features-grid">
-            {[
-              {
-                icon: <Calendar size={22} />,
-                name: 'Smart Schedule',
-                desc: 'Unify training sessions, matches, physio appointments and rest days into a single adaptive calendar you can search in seconds.',
-              },
-              {
-                icon: <Users size={22} />,
-                name: 'Team Availability',
-                desc: 'See who\'s available, injured, or travelling at a glance. Coordinate squad logistics without the endless group chat noise.',
-              },
-              {
-                icon: <Activity size={22} />,
-                name: 'Recovery Insights',
-                desc: 'Track load, HRV, sleep quality and injury history. Avail learns your patterns and flags when you need more recovery time.',
-              },
-              {
-                icon: <Zap size={22} />,
-                name: 'Command Mode',
-                desc: 'Press Cmd+K and ask anything — "Who\'s free Saturday?", "Show last week\'s sessions", "Book physio". Instant answers.',
-              },
-              {
-                icon: <Shield size={22} />,
-                name: 'Private by Design',
-                desc: 'Your health and performance data belongs to you. Granular controls over what you share, with coaches and with your team.',
-              },
-              {
-                icon: <Share2 size={22} />,
-                name: 'Integrations',
-                desc: 'Connects with Strava, Garmin, MyFitnessPal, Notion, Google Calendar and more — wherever your athletic life already lives.',
-              },
-            ].map((f, i) => (
-              <div key={i} className="feature-card">
-                <div className="feature-icon-box">{f.icon}</div>
-                <h3 className="feature-name">{f.name}</h3>
-                <p className="feature-desc">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ── Social Proof ───────────────────────────── */}
-        <section className="social-section">
-          <div className="social-inner">
-            <span className="section-label">From the Community</span>
-            <h2 className="section-title">Athletes who are waiting</h2>
-
-            <div className="quotes-grid">
-              {[
-                {
-                  text: 'I spend more time coordinating my calendar than I do training. Avail looks like the solution I\'ve been waiting for.',
-                  name: 'Mia R.',
-                  role: 'Semi-pro footballer · Manchester',
-                  initial: 'M',
-                },
-                {
-                  text: 'As a captain, managing team availability is a full-time job. I need something that actually understands athlete schedules.',
-                  name: 'Priya S.',
-                  role: 'University rugby captain · Leeds',
-                  initial: 'P',
-                },
-                {
-                  text: 'Every app I\'ve tried was built for men and adapted badly. The fact that Avail is built from scratch for us means everything.',
-                  name: 'Zara T.',
-                  role: 'Track & field athlete · London',
-                  initial: 'Z',
-                },
-              ].map((q, i) => (
-                <div key={i} className="quote-card">
-                  <p className="quote-text">{q.text}</p>
-                  <div className="quote-author">
-                    <div className="quote-avatar">{q.initial}</div>
-                    <div>
-                      <div className="quote-name">{q.name}</div>
-                      <div className="quote-role">{q.role}</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ── How It Works ───────────────────────────── */}
-        <section className="features-section" style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
-          <div className="section-header">
-            <h2 className="section-title">Get Started in 3 Steps</h2>
-            <p className="section-sub">Simple. Science-backed. Powerful.</p>
-          </div>
-
-          <div className="features-grid">
-            {[
-              {
-                icon: <User size={22} />,
-                name: 'Sync Your Data',
-                desc: 'Connect your calendar, wearables, and training history. Avail learns your personal patterns in minutes.',
-              },
-              {
-                icon: <Activity size={22} />,
-                name: 'Get Personalized Guidance',
-                desc: 'AI-powered training plans adapt to your cycle and recovery. Smart notifications keep you on track.',
-              },
-              {
-                icon: <TrendingUp size={22} />,
-                name: 'Optimize & Improve',
-                desc: 'Track progress with female-specific metrics. Watch your performance and confidence grow.',
-              },
-            ].map((f, i) => (
-              <div key={i} className="feature-card">
-                <div className="feature-icon-box">{f.icon}</div>
-                <h3 className="feature-name">{f.name}</h3>
-                <p className="feature-desc">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ── Gym Benefits ─────────────────────────── */}
-        <section className="features-section" style={{ paddingTop: '3rem', paddingBottom: '3rem', background: 'linear-gradient(180deg, var(--color-bg-secondary) 0%, var(--color-bg-primary) 100%)' }}>
-          <div className="section-header">
-            <h2 className="section-title">Perfect for Gym Communities</h2>
-            <p className="section-sub">Empower your female members with cycle-informed training</p>
-          </div>
-
-          <div className="features-grid">
-            {[
-              {
-                icon: <Users size={22} />,
-                name: 'Empower Your Female Members',
-                desc: 'Retain members with cycle-informed training. Reduce injury rates with smart load management. Build loyalty.',
-              },
-              {
-                icon: <TrendingUp size={22} />,
-                name: 'Data Insights for Operations',
-                desc: 'Understand female member preferences. Optimize class scheduling around female physiology. Build targeted programs.',
-              },
-              {
-                icon: <Share2 size={22} />,
-                name: 'Community Integration',
-                desc: 'Members form accountability groups. Leaderboards, challenges, and milestones. Build female-focused performance culture.',
-              },
-            ].map((f, i) => (
-              <div key={i} className="feature-card">
-                <div className="feature-icon-box">{f.icon}</div>
-                <h3 className="feature-name">{f.name}</h3>
-                <p className="feature-desc">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ── FAQ Section ────────────────────────────── */}
-        <section className="features-section" style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
-          <div className="section-header">
-            <h2 className="section-title">Frequently Asked Questions</h2>
-            <p className="section-sub">Everything you need to know</p>
-          </div>
-
-          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-            {[
-              {
-                q: 'What makes Avail different from other fitness apps?',
-                a: 'Avail is the first performance app specifically designed around female physiology. Every feature—from training programming to load management—is built on women\'s data and hormonal science, not generic fitness trends.'
-              },
-              {
-                q: 'How does the cycle tracking work? Do I have to sync my calendar?',
-                a: 'Cycle tracking is optional and fully private. You can sync your calendar, log manually, or connect wearables. All tracking is encrypted and never shared.'
-              },
-              {
-                q: 'What if I don\'t have a regular cycle or use hormonal contraception?',
-                a: 'Avail works for everyone. Hormonal contraception changes your cycle patterns—we account for that. Irregular cycles? We adapt. The app\'s recovery and load management features still apply.'
-              },
-              {
-                q: 'Can I use Avail without a gym membership?',
-                a: 'Absolutely. Avail works with any training environment—gyms, home workouts, sports. While we partner with gyms, the core app is designed for independent users too.'
-              },
-              {
-                q: 'What data do you collect and how is it used?',
-                a: 'We collect training data and optional cycle information to power personalized recommendations. Your data is encrypted, private, and never sold. We use aggregate data to improve our female-focused training algorithms.'
-              },
-              {
-                q: 'When will the full app launch?',
-                a: 'We\'re launching in Q4 2026. Early access members get the app 4 weeks before public launch, plus a lifetime discount. You\'ll shape the app with your feedback during beta.'
-              },
-            ].map((item, i) => (
-              <div
-                key={i}
-                className="feature-card"
-                style={{ marginBottom: '1rem', cursor: 'pointer' }}
-                onClick={() => setExpandedFaq(expandedFaq === i ? null : i)}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
-                  <h3 className="feature-name" style={{ margin: 0 }}>{item.q}</h3>
-                  {expandedFaq === i ? (
-                    <ChevronUp size={20} style={{ flexShrink: 0, color: 'var(--color-gradient-start)' }} />
-                  ) : (
-                    <ChevronDown size={20} style={{ flexShrink: 0, color: 'var(--color-text-secondary)' }} />
-                  )}
-                </div>
-                {expandedFaq === i && (
-                  <p className="feature-desc" style={{ marginTop: '1rem', marginBottom: 0 }}>{item.a}</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ── Footer ─────────────────────────────────── */}
-        <footer className="footer">
-          <div>© 2026 Avail. Built on female physiology.</div>
-          <div className="footer-links">
-            <a href="#" className="footer-link">Privacy</a>
-            <a href="#" className="footer-link">Terms</a>
-            <a href="#" className="footer-link">Contact</a>
-          </div>
-        </footer>
-      </div>
+      <main className="relative z-10">
+        <HeroSection />
+        <WhySection items={femaleBiologyFeatures} />
+        <EarlyAccessSection
+          status={status}
+          name={name}
+          email={email}
+          referredByCode={referredByCode}
+          checkEmail={checkEmail}
+          loading={loading}
+          error={error}
+          joinedUser={joinedUser}
+          copied={copied}
+          perks={perks}
+          referralLink={referralLink}
+          onNameChange={setName}
+          onEmailChange={setEmail}
+          onCheckEmailChange={setCheckEmail}
+          onJoin={handleJoin}
+          onCheckStatus={handleCheckStatus}
+          onGitHubOAuth={handleGitHubOAuth}
+          onCopy={handleCopy}
+          onShowCheck={handleShowCheck}
+          onShowJoin={handleShowJoin}
+          onRegisterAnother={handleRegisterAnother}
+        />
+        <FeaturesSection items={appFeatures} />
+        <SocialProofSection quotes={quotes} />
+        <StepsSection items={steps} />
+        <GymBenefitsSection items={gymBenefits} />
+        <FAQSection
+          faqs={faqs}
+          expandedFaq={expandedFaq}
+          onToggleFaq={(index) => setExpandedFaq(expandedFaq === index ? null : index)}
+        />
+        <Footer />
+      </main>
     </div>
   );
+}
+
+export default function App() {
+  const path = window.location.pathname.replace(/\/$/, '') || '/';
+
+  if (path === '/privacy') {
+    return <PrivacyPage />;
+  }
+
+  if (path === '/terms') {
+    return <TermsPage />;
+  }
+
+  return <LandingPage />;
 }

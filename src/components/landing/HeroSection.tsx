@@ -1,33 +1,51 @@
-import { gradientText } from './shared';
-import { pageShell } from './shared';
+import { gradientText } from "./shared";
+import { pageShell } from "./shared";
 
 export function HeroSection() {
   return (
-    <section className={`${pageShell} flex flex-col justify-center pt-28 pb-12 text-center lg:min-h-screen lg:pt-32`}>
-      <h1 className="fade-up fade-up-delay-1 mx-auto mb-7 max-w-[900px] text-[clamp(2.8rem,6.5vw,5.5rem)] leading-[1.1] font-black tracking-normal text-[#1B1F23]">
+    <section
+      className={`${pageShell} flex flex-col justify-center pt-28 text-center lg:pt-32`}
+    >
+      <p className="type-caption fade-up fade-up-delay-1 mb-5 font-extrabold tracking-[1.8px] text-[#4A8FA8] uppercase">
+        Performance, built for women
+      </p>
+
+      <h1 className="fade-up fade-up-delay-1 mx-auto mb-6 max-w-[900px] text-[clamp(2.5rem,1.75rem+3.7vw,5.125rem)] leading-[1.02] font-black tracking-[-0.035em] text-[#1B1F23]">
         Be Stronger
         <br />
         <span className={gradientText}>Train Smarter</span>
       </h1>
 
-      <p className="fade-up fade-up-delay-2 mx-auto mb-6 max-w-[620px] text-xl leading-8 font-light text-[#64707D]">
-        The first performance app designed around female physiology and women's training data. Train with your cycle, not against it.
+      <p className="type-lead fade-up fade-up-delay-2 mx-auto mb-9 max-w-[680px] font-normal text-[#596775]">
+        The performance app built around female physiology and real training
+        data. Train with your cycle, not against it.
       </p>
 
-      <div className="fade-up fade-up-delay-3 flex flex-wrap justify-center gap-8 lg:gap-14">
-        {[
-          ['500+', 'Beta users'],
-          ['+18%', 'Performance gain'],
-          ['95%', 'Retention rate'],
-        ].map(([value, label], index) => (
-          <div key={label} className="flex items-center gap-8 lg:gap-14">
-            {index > 0 && <div className="hidden h-12 w-px bg-black/6 sm:block" />}
-            <div className="flex flex-col items-center">
-              <span className={`${gradientText} text-4xl font-extrabold tracking-normal`}>{value}</span>
-              <span className="mt-1 text-xs font-semibold tracking-[0.5px] text-[#64707D] uppercase">{label}</span>
+      <div className="fade-up fade-up-delay-3">
+        <div className="mx-auto grid max-w-[760px] grid-cols-1 gap-6 sm:grid-cols-3 sm:gap-0">
+          {[
+            ["500+", "Early users"],
+            ["+18%", "Performance gain"],
+            ["95%", "Retention rate"],
+          ].map(([value, label], index) => (
+            <div
+              key={label}
+              className={`flex flex-col items-center px-6 ${index > 0 ? "sm:border-l sm:border-black/8" : ""}`}
+            >
+              <span
+                className={`${gradientText} text-4xl leading-none font-extrabold tracking-[-0.02em]`}
+              >
+                {value}
+              </span>
+              <span className="mt-2 text-xs font-bold tracking-[0.9px] text-[#596775] uppercase">
+                {label}
+              </span>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
+        <p className="mt-5 text-xs text-[#64707D]/80">
+          Based on results from early Avail testing.
+        </p>
       </div>
     </section>
   );

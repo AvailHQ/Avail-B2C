@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { SectionHeader, cardClass, sectionShell } from './shared';
+import { SectionHeader, cardClass, pageShell } from './shared';
 
 interface FaqItem {
   q: string;
@@ -14,7 +14,7 @@ interface FAQSectionProps {
 
 export function FAQSection({ faqs, expandedFaq, onToggleFaq }: FAQSectionProps) {
   return (
-    <section className={`${sectionShell} flex flex-col justify-center py-12 lg:min-h-screen`}>
+    <section id="faq" className={`${pageShell} flex scroll-mt-24 flex-col justify-center`}>
       <SectionHeader title="Frequently Asked Questions" subtitle="Everything you need to know" />
       <div className="mx-auto max-w-[800px]">
         {faqs.map((item, index) => (
@@ -24,14 +24,14 @@ export function FAQSection({ faqs, expandedFaq, onToggleFaq }: FAQSectionProps) 
             onClick={() => onToggleFaq(index)}
           >
             <span className="flex items-center justify-between gap-4">
-              <span className="text-lg font-extrabold tracking-normal text-[#1B1F23]">{item.q}</span>
+              <span className="type-feature-title font-extrabold text-[#1B1F23]">{item.q}</span>
               {expandedFaq === index ? (
                 <ChevronUp size={20} className="shrink-0 text-[#6FBF9E]" />
               ) : (
                 <ChevronDown size={20} className="shrink-0 text-[#64707D]" />
               )}
             </span>
-            {expandedFaq === index && <span className="mt-4 text-sm leading-7 text-[#64707D]">{item.a}</span>}
+            {expandedFaq === index && <span className="type-body mt-4 text-[#64707D]">{item.a}</span>}
           </button>
         ))}
       </div>

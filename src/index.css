@@ -4,6 +4,13 @@
    (linear from 360px to 1280px, then clamped). Redefining these tokens makes
    all existing text-xs … text-7xl usages fluid without touching the markup. */
 @theme {
+  --breakpoint-tablet: 40rem;
+  --breakpoint-air: 64rem;
+  --breakpoint-mac: 90rem;
+  --breakpoint-full-hd: 120rem;
+  --breakpoint-qhd: 160rem;
+  --breakpoint-four-k: 240rem;
+
   --text-xs: clamp(0.6875rem, 0.6630rem + 0.1087vw, 0.75rem);
   --text-xs--line-height: 1.5;
   --text-sm: clamp(0.7813rem, 0.7446rem + 0.1630vw, 0.875rem);
@@ -28,6 +35,53 @@
   --text-7xl--line-height: 1.03;
 }
 
+/* Semantic, fluid typography roles. These scale continuously between phone
+   and desktop widths, while clamp() keeps both ends predictable. */
+@layer components {
+  .type-display {
+    font-size: clamp(2.5rem, 1.55rem + 4.2vw, 5.5rem);
+    line-height: 1.06;
+    letter-spacing: -0.025em;
+  }
+
+  .type-page-title {
+    font-size: clamp(2.25rem, 1.75rem + 2.25vw, 3.75rem);
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+  }
+
+  .type-section-title {
+    font-size: clamp(2rem, 1.7rem + 1.35vw, 3rem);
+    line-height: 1.12;
+    letter-spacing: -0.015em;
+  }
+
+  .type-feature-title {
+    font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+    line-height: 1.35;
+  }
+
+  .type-lead {
+    font-size: clamp(1.0625rem, 0.98rem + 0.38vw, 1.25rem);
+    line-height: 1.65;
+  }
+
+  .type-body {
+    font-size: clamp(0.9375rem, 0.9rem + 0.18vw, 1.0625rem);
+    line-height: 1.7;
+  }
+
+  .type-button {
+    font-size: clamp(0.875rem, 0.84rem + 0.16vw, 1rem);
+    line-height: 1.25;
+  }
+
+  .type-caption {
+    font-size: clamp(0.75rem, 0.72rem + 0.12vw, 0.8125rem);
+    line-height: 1.5;
+  }
+}
+
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -40,7 +94,7 @@ body {
   background-color: #F7FAF8;
   color: #1B1F23;
   min-height: 100vh;
-  overflow-x: hidden;
+  overflow-x: clip;
   line-height: 1.6;
 }
 

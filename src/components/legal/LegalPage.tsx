@@ -87,10 +87,10 @@ export function LegalPage({ title, intro, updated, sections }: LegalPageProps) {
                 Back to home
               </a>
               <p className="mb-5 text-xs font-extrabold uppercase tracking-[0.22em] text-[#4FA3C7]">Legal</p>
-              <h1 className="text-6xl font-black leading-[1.05] tracking-[-0.02em] text-[#1B1F23]">
+              <h1 className="type-page-title font-black text-[#1B1F23]">
                 {title}
               </h1>
-              <p className="mt-7 max-w-[880px] text-lg leading-8 text-[#64707D]">{intro}</p>
+              <p className="type-lead mt-7 max-w-[880px] text-[#64707D]">{intro}</p>
               <p className="mt-5 text-sm font-semibold text-[#64707D]">{updated}</p>
             </header>
 
@@ -100,7 +100,7 @@ export function LegalPage({ title, intro, updated, sections }: LegalPageProps) {
                   <h2 id={`${section.id}-heading`} className="mb-5 text-2xl font-extrabold tracking-[-0.01em] text-[#1B1F23]">{section.heading}</h2>
                   <div className="space-y-5">
                     {section.paragraphs.map((paragraph) => (
-                      <p key={paragraph} className="max-w-[760px] text-base leading-8 text-[#334155]">
+                      <p key={paragraph} className="type-body max-w-[760px] text-[#334155]">
                         {paragraph}
                       </p>
                     ))}

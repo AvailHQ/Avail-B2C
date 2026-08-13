@@ -75,18 +75,18 @@ export function LegalPage({ title, intro, updated, sections }: LegalPageProps) {
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[#F7FAF8] text-[#1B1F23]">
-      <Header />
-      <main className={`${pageShell} pt-32 pb-20 lg:pt-40`}>
+      <Header quiet />
+      <main className={`${pageShell} pt-28 pb-20 lg:pt-36`}>
         <div className="grid gap-12 lg:max-w-[1180px] lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-16">
           <article className="min-w-0">
-            <header className="mb-14">
+            <header className="mb-10 lg:mb-14">
               <a
                 href="/"
-                className="mb-8 inline-flex text-sm font-bold text-[#4FA3C7] transition hover:text-[#1B1F23]"
+                className="mb-5 inline-flex min-h-11 items-center text-sm font-bold text-[#1F6E92] underline underline-offset-4 transition hover:text-[#1B1F23] lg:mb-8"
               >
                 Back to home
               </a>
-              <p className="mb-5 text-xs font-extrabold uppercase tracking-[0.22em] text-[#4FA3C7]">Legal</p>
+              <p className="mb-5 text-xs font-extrabold uppercase tracking-[0.22em] text-[#1F6E92]">Legal</p>
               <h1 className="type-page-title font-black text-[#1B1F23]">
                 {title}
               </h1>
@@ -118,9 +118,9 @@ export function LegalPage({ title, intro, updated, sections }: LegalPageProps) {
                   <li key={section.id}>
                     <a
                       href={`#${section.id}`}
-                      className={`block border-l-2 py-1 pl-4 text-sm font-bold leading-6 transition ${
+                      className={`flex min-h-11 items-center border-l-2 pl-4 text-sm font-bold leading-6 transition ${
                         activeSectionId === section.id
-                          ? 'border-[#4FA3C7] text-[#4FA3C7]'
+                          ? 'border-[#2E7C9C] text-[#2E7C9C]'
                           : 'border-transparent text-[#64707D] hover:border-[#6FBF9E] hover:text-[#1B1F23]'
                       }`}
                       aria-current={activeSectionId === section.id ? 'true' : undefined}

@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { ArrowUpRight, Check } from 'lucide-react';
+import { Check, ChevronDown } from 'lucide-react';
 import independentAthleteImage from '../../assets/audience-independent-athlete-wide.png';
 import gymGirlImage from '../../assets/audience-gym-girl-wide.png';
 import teamPlayerImage from '../../assets/audience-team-player-wide.png';
 import { pageShell } from './shared';
+import { trackIfConsented } from '../../lib/analytics';
 
 const audiences = [
   {
@@ -50,16 +51,37 @@ export function GymBenefitsSection() {
   return (
     <section id="audiences" className={`${pageShell} scroll-mt-24`} aria-labelledby="audience-title">
       <div className="mb-9 text-center air:mb-12">
-        <p className="type-caption font-extrabold uppercase tracking-[1.5px] text-[#4A9B91]">Who Avail is for</p>
+        <p className="type-caption font-extrabold uppercase tracking-[1.5px] text-[#2F6A62]">Who Avail is for</p>
         <h2 id="audience-title" className="mt-3 text-[clamp(2.1rem,3.2vw,3.7rem)] leading-[1.02] font-black tracking-[-0.03em] text-[#1B1F23]">
           Built for every way you train.
         </h2>
-        <p className="mx-auto mt-4 max-w-[620px] text-sm leading-6 text-[#64707D] tablet:text-base">
+        <p className="mx-auto mt-4 max-w-[620px] text-sm leading-6 text-[#556166] tablet:text-base">
           Whether you train alone, lift in the gym or compete with a team, Avail adapts to the athlete you are.
         </p>
       </div>
 
-      <div className="flex flex-col gap-4 air:h-[470px] air:flex-row" role="list" aria-label="Choose your athlete type">
+      <div className="mb-4 grid grid-cols-3 gap-2 air:hidden" aria-label="Choose your athlete type">
+        {audiences.map((audience) => (
+          <button
+            key={audience.id}
+            type="button"
+            aria-pressed={activeId === audience.id}
+            onClick={() => {
+              setActiveId(audience.id);
+              trackIfConsented('audience_selected', { audience: audience.id });
+            }}
+            className={`type-caption min-h-11 rounded-xl border px-2 font-extrabold shadow-sm transition ${
+              activeId === audience.id
+                ? 'border-transparent bg-linear-to-r from-[#6FBF9E] to-[#4FA3C7] text-white shadow-[0_6px_18px_rgba(79,163,199,0.2)]'
+                : 'border-[#4FA3C7]/22 bg-white/75 text-[#334155] hover:border-[#4FA3C7]/45 hover:bg-white'
+            }`}
+          >
+            {audience.name}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-col gap-4 air:h-[470px] air:flex-row" role="list" aria-label="Audience details">
         {audiences.map((audience) => {
           const isActive = audience.id === activeId;
           const panelId = `${audience.id}-details`;
@@ -68,7 +90,7 @@ export function GymBenefitsSection() {
             <article
               key={audience.id}
               role="listitem"
-              className={`relative overflow-hidden rounded-[22px] border bg-[#173D3C] transition-[flex,border-color,box-shadow] duration-500 ease-out ${
+              className={`relative overflow-hidden rounded-[22px] border bg-[#173D3C] transition-[flex,border-color,box-shadow] duration-500 ease-out ${isActive ? 'block' : 'hidden air:block'} ${
                 isActive
                   ? 'border-[#6FC5B1] shadow-[0_18px_48px_rgba(39,93,87,0.16)] air:flex-[2.25]'
                   : 'border-black/7 air:flex-1'
@@ -83,7 +105,10 @@ export function GymBenefitsSection() {
                   aria-expanded={isActive}
                   aria-controls={panelId}
                   aria-label={`Show ${audience.name} details`}
-                  onClick={() => setActiveId(audience.id)}
+                  onClick={() => {
+                    setActiveId(audience.id);
+                    trackIfConsented('audience_selected', { audience: audience.id });
+                  }}
                   className="group relative z-10 h-[330px] w-full shrink-0 cursor-pointer overflow-hidden text-left focus-visible:outline-3 focus-visible:outline-offset-[-3px] focus-visible:outline-[#4FA3C7] air:h-full air:w-[275px]"
                 >
                   <div className="relative z-10 flex h-full flex-col p-5">
@@ -93,8 +118,8 @@ export function GymBenefitsSection() {
                     </div>
                     <div className="mt-auto flex items-center justify-between gap-3">
                       <span className="text-base font-extrabold text-white drop-shadow-sm">{audience.footer}</span>
-                      <span className={`flex size-11 shrink-0 items-center justify-center rounded-full border bg-white/94 shadow-sm transition duration-300 ${isActive ? 'rotate-45 border-[#6FC5B1] text-[#28766D]' : 'border-white/65 text-[#1B1F23]'}`} aria-hidden="true">
-                        <ArrowUpRight size={20} />
+                      <span className={`flex size-11 shrink-0 items-center justify-center rounded-full border bg-white/94 shadow-sm transition duration-300 ${isActive ? 'rotate-180 border-[#6FC5B1] text-[#28766D]' : 'border-white/65 text-[#1B1F23]'}`} aria-hidden="true">
+                        <ChevronDown size={20} />
                       </span>
                     </div>
                   </div>

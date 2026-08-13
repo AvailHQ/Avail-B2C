@@ -21,6 +21,7 @@ interface EarlyAccessSectionProps {
   checkEmail: string;
   loading: boolean;
   error: string | null;
+  fieldErrors: { name?: string; email?: string };
   joinedUser: UserInfo | null;
   copied: boolean;
   referralLink: string;
@@ -42,6 +43,7 @@ export function EarlyAccessSection({
   checkEmail,
   loading,
   error,
+  fieldErrors,
   joinedUser,
   copied,
   referralLink,
@@ -70,8 +72,8 @@ export function EarlyAccessSection({
 
         <div className="mx-auto max-w-[760px]">
         {error && (
-          <div className="type-caption mb-5 flex items-center gap-2.5 rounded-lg border border-[#E07070]/25 bg-[#E07070]/7 px-4 py-3 text-[#c0565a]">
-            <AlertTriangle size={16} className="shrink-0" />
+          <div role="alert" aria-live="assertive" className="type-caption mb-5 flex items-center gap-2.5 rounded-lg border border-[#A63F47]/25 bg-[#A63F47]/7 px-4 py-3 text-[#92363D]">
+            <AlertTriangle size={16} className="shrink-0" aria-hidden="true" />
             <span>{error}</span>
           </div>
         )}
@@ -87,9 +89,12 @@ export function EarlyAccessSection({
                   placeholder="Full name"
                   value={name}
                   onChange={(event) => onNameChange(event.target.value)}
+                  aria-invalid={Boolean(fieldErrors.name)}
+                  aria-describedby={fieldErrors.name ? 'join-name-error' : undefined}
                   className="type-body w-full rounded-2xl border border-[#17333A]/18 bg-white/75 px-6 py-4 text-[#1B1F23] transition placeholder:text-[#64707D]/75 focus:border-[#4FA3C7] focus:bg-white focus:ring-4 focus:ring-[#4FA3C7]/10 focus:outline-none"
                   required
                 />
+                {fieldErrors.name && <span id="join-name-error" className="type-caption mt-1.5 block px-2 font-bold text-[#92363D]">{fieldErrors.name}</span>}
               </label>
 
               <label>
@@ -100,9 +105,12 @@ export function EarlyAccessSection({
                   placeholder="Email address"
                   value={email}
                   onChange={(event) => onEmailChange(event.target.value)}
+                  aria-invalid={Boolean(fieldErrors.email)}
+                  aria-describedby={fieldErrors.email ? 'join-email-error' : undefined}
                   className="type-body w-full rounded-2xl border border-[#17333A]/18 bg-white/75 px-6 py-4 text-[#1B1F23] transition placeholder:text-[#64707D]/75 focus:border-[#4FA3C7] focus:bg-white focus:ring-4 focus:ring-[#4FA3C7]/10 focus:outline-none"
                   required
                 />
+                {fieldErrors.email && <span id="join-email-error" className="type-caption mt-1.5 block px-2 font-bold text-[#92363D]">{fieldErrors.email}</span>}
               </label>
 
               {referredByCode && (
@@ -130,9 +138,9 @@ export function EarlyAccessSection({
               </button>
             </form>
 
-            <div className="mt-7 text-center text-[#647B80]">
+            <div className="mt-7 text-center text-[#556166]">
               <p className="type-body flex items-center justify-center gap-2">
-                <span className="inline-flex size-6 shrink-0 items-center justify-center text-[#4A8FA8]">
+                <span className="inline-flex size-6 shrink-0 items-center justify-center text-[#286D86]">
                   <Users size={18} aria-hidden="true" />
                 </span>
                 <span>
@@ -180,7 +188,7 @@ export function EarlyAccessSection({
             </form>
 
             <button
-              className="type-button mt-5 inline-flex cursor-pointer items-center gap-1 border-0 bg-transparent font-bold text-[#4FA3C7] transition hover:text-[#6FBF9E] hover:underline"
+              className="type-button mt-5 inline-flex min-h-11 cursor-pointer items-center gap-1 border-0 bg-transparent font-bold text-[#1F6E92] underline underline-offset-4 transition hover:text-[#285E78]"
               onClick={onShowJoin}
             >
               Back to registration
@@ -251,7 +259,7 @@ export function EarlyAccessSection({
             </div>
 
             <button
-              className="type-button inline-flex cursor-pointer items-center gap-1 border-0 bg-transparent font-bold text-[#4FA3C7] transition hover:text-[#6FBF9E] hover:underline"
+              className="type-button inline-flex min-h-11 cursor-pointer items-center gap-1 border-0 bg-transparent font-bold text-[#1F6E92] underline underline-offset-4 transition hover:text-[#285E78]"
               onClick={onRegisterAnother}
             >
               Register another athlete

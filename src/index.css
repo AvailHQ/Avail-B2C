@@ -88,6 +88,10 @@ html {
   scroll-behavior: smooth;
 }
 
+[id] {
+  scroll-margin-top: 7rem;
+}
+
 body {
   font-family: "Martel Sans", "Quicksand", "Noto Serif SC", -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: clamp(0.875rem, 0.8rem + 0.28vw, 1rem);
@@ -135,3 +139,63 @@ body {
 .blob-move-reverse { animation: blob-move 15s ease-in-out infinite reverse; }
 .blob-move-delay { animation: blob-move 10s ease-in-out infinite 2s; }
 .pulse-ring { animation: pulse-ring 2s ease-in-out infinite; }
+
+/* Shared entrance motion. Sections reveal once as they enter the viewport;
+   repeated content inside them follows with a restrained stagger. */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 700ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-on-scroll.reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+  will-change: auto;
+}
+
+.reveal-on-scroll > * {
+  transition:
+    opacity 560ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 560ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-on-scroll:not(.reveal-visible) > * {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.reveal-visible > :nth-child(2) { transition-delay: 70ms; }
+.reveal-visible > :nth-child(3) { transition-delay: 120ms; }
+.reveal-visible > :nth-child(4) { transition-delay: 170ms; }
+
+header.fixed {
+  animation: header-enter 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes header-enter {
+  from { opacity: 0; transform: translateY(-14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .reveal-on-scroll,
+  .reveal-on-scroll > * {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

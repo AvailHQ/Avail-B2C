@@ -1,6 +1,6 @@
 import { LegalPage } from '../components/legal/LegalPage';
 
-const PRIVACY_EMAIL = 'privacy@myavail.app';
+const PRIVACY_EMAIL = 'yash.saxena1@outlook.com';
 
 const privacySections = [
   {
@@ -53,8 +53,8 @@ const privacySections = [
     heading: '6. Cookies, local storage, and analytics',
     paragraphs: [
       'This website may use essential local storage or cookies to keep the site working, remember preferences, and support early access form behaviour.',
-      'If analytics are added, they should be used to understand website performance and conversion behaviour, not to infer health status or generate readiness scores.',
-      'Non-essential analytics or behaviour tracking should be subject to appropriate consent controls where required.',
+      'With consent, this website uses Vercel Web Analytics to understand aggregated page views and selected interactions such as early-access actions, FAQ opens, audience selections, referral-link copies, and contact clicks.',
+      'Analytics are disabled unless a visitor accepts them. We do not send names, email addresses, referral codes, health information, cycle data, or free-text form content to analytics.',
     ],
   },
   {

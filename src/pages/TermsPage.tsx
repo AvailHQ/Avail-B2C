@@ -1,6 +1,6 @@
 import { LegalPage } from '../components/legal/LegalPage';
 
-const LEGAL_EMAIL = 'privacy@myavail.app';
+const LEGAL_EMAIL = 'yash.saxena1@outlook.com';
 
 const termsSections = [
   {

@@ -15,16 +15,16 @@ export function FeaturesSection({ items }: { items: FeatureItem[] }) {
         <div className="absolute inset-0 bg-[#102c2b]/50" />
 
         <div className="relative z-10 flex min-h-[640px] flex-col p-6 text-white tablet:p-9 air:min-h-[690px] air:p-12 mac:p-14">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
             <div className="flex items-center gap-3 rounded-full border border-white/30 bg-white/90 px-4 py-2 text-[#1B1F23] shadow-sm backdrop-blur-md">
-              <span className="type-caption rounded-full bg-[#6FBF9E]/15 px-2.5 py-1 font-extrabold uppercase tracking-[1px] text-[#4FA3C7]">
+              <span className="type-caption rounded-full bg-[#6FBF9E]/15 px-2.5 py-1 font-extrabold uppercase tracking-[1px] text-[#1F6E92]">
                 Performance
               </span>
               <span className="type-button font-bold text-[#1B1F23]">Built for female athletes</span>
             </div>
             <a
               href="#early-access"
-              className="flex items-center gap-2 rounded-full border border-white/30 bg-white/18 px-4 py-2 text-xs font-bold text-white backdrop-blur-md transition hover:bg-white hover:text-[#1B1F23] tablet:text-sm"
+              className="ml-auto hidden min-h-11 items-center gap-2 rounded-full border border-white/30 bg-white/18 px-4 py-2 text-xs font-bold text-white backdrop-blur-md transition hover:bg-white hover:text-[#1B1F23] tablet:flex tablet:text-sm"
             >
               Join early access
               <ArrowUpRight size={16} aria-hidden="true" />
@@ -47,14 +47,14 @@ export function FeaturesSection({ items }: { items: FeatureItem[] }) {
               {items.map((feature) => (
                 <article
                   key={feature.name}
-                  className="group flex min-w-0 items-center gap-3 rounded-full border border-white/55 bg-white/92 py-2.5 pr-5 pl-3 text-[#1B1F23] shadow-[0_10px_30px_rgba(8,34,34,0.15)] backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 hover:bg-white"
+                  className="group flex min-w-0 items-start gap-3 rounded-2xl border border-white/55 bg-white/94 py-3 pr-4 pl-3 text-[#1B1F23] shadow-[0_10px_30px_rgba(8,34,34,0.15)] backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 hover:bg-white tablet:items-center tablet:rounded-full tablet:pr-5"
                 >
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#6FBF9E]/15 text-[#4FA3C7] transition group-hover:bg-[#6FBF9E]/25">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#6FBF9E]/15 text-[#1F6E92] transition group-hover:bg-[#6FBF9E]/25">
                     {feature.icon}
                   </div>
                   <div className="min-w-0">
-                    <h3 className="type-button truncate font-extrabold text-[#1B1F23]">{feature.name}</h3>
-                    <p className="type-caption truncate text-[#64707D]">{feature.desc}</p>
+                    <h3 className="type-button font-extrabold text-[#1B1F23]">{feature.name}</h3>
+                    <p className="type-caption mt-0.5 line-clamp-2 text-[#586470] tablet:truncate">{feature.desc}</p>
                   </div>
                 </article>
               ))}

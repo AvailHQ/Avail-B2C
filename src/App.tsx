@@ -8,6 +8,7 @@ import {
   Shield,
 } from 'lucide-react';
 import { EarlyAccessSection } from './components/landing/EarlyAccessSection';
+import { ConsentAwareAnalytics } from './components/ConsentAwareAnalytics';
 import { FAQSection } from './components/landing/FAQSection';
 import { FeaturesSection } from './components/landing/FeaturesSection';
 import { Footer } from './components/landing/Footer';
@@ -17,6 +18,7 @@ import { HeroSection } from './components/landing/HeroSection';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { TermsPage } from './pages/TermsPage';
 import type { UserInfo } from './types';
+import { trackIfConsented } from './lib/analytics';
 
 const WAITLIST_STORAGE_KEY = 'avail_waitlist_users';
 
@@ -93,6 +95,7 @@ function LandingPage() {
   const [checkEmail, setCheckEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ name?: string; email?: string }>({});
   const [joinedUser, setJoinedUser] = useState<UserInfo | null>(null);
   const [copied, setCopied] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
@@ -102,6 +105,25 @@ function LandingPage() {
     const ref = params.get('ref');
     if (ref) setReferredByCode(ref.toUpperCase());
 
+  }, []);
+
+  useEffect(() => {
+    const scrollToHashTarget = () => {
+      const id = window.location.hash.slice(1);
+      const target = id ? document.getElementById(id) : null;
+      if (!target) return;
+
+      const headerHeight = document.querySelector('header')?.getBoundingClientRect().height ?? 0;
+      const targetTop = target.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({ top: Math.max(0, targetTop - headerHeight - 24), behavior: 'smooth' });
+    };
+
+    const frameId = window.requestAnimationFrame(() => window.requestAnimationFrame(scrollToHashTarget));
+    window.addEventListener('hashchange', scrollToHashTarget);
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.removeEventListener('hashchange', scrollToHashTarget);
+    };
   }, []);
 
   const fireConfetti = () => {
@@ -115,19 +137,30 @@ function LandingPage() {
 
   const handleJoin = async (event: FormEvent) => {
     event.preventDefault();
-    if (!name.trim() || !email.trim()) {
-      setError('Please fill in all fields.');
+    const nextFieldErrors: { name?: string; email?: string } = {};
+    if (!name.trim()) nextFieldErrors.name = 'Enter your full name.';
+    if (!email.trim()) nextFieldErrors.email = 'Enter your email address.';
+
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setFieldErrors(nextFieldErrors);
+      setError('Please check the highlighted fields.');
+      window.requestAnimationFrame(() => {
+        document.getElementById(nextFieldErrors.name ? 'join-name' : 'join-email')?.focus();
+      });
       return;
-}
+    }
 
     const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRe.test(email)) {
+      setFieldErrors({ email: 'Enter a valid email address.' });
       setError('Please enter a valid email address.');
+      window.requestAnimationFrame(() => document.getElementById('join-email')?.focus());
       return;
     }
 
     setLoading(true);
     setError(null);
+    setFieldErrors({});
     try {
       const users = loadWaitlist();
       const normalizedEmail = email.trim().toLowerCase();
@@ -164,6 +197,7 @@ function LandingPage() {
 
       const nextUsers = [...updatedUsers, user];
       saveWaitlist(nextUsers);
+      trackIfConsented('waitlist_joined', { referred: Boolean(referrer) });
       setJoinedUser(user);
       setStatus('success');
       fireConfetti();
@@ -199,6 +233,7 @@ function LandingPage() {
   const handleCopy = () => {
     if (!joinedUser) return;
     navigator.clipboard.writeText(`${window.location.origin}?ref=${joinedUser.referralCode}`);
+    trackIfConsented('referral_link_copied');
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
@@ -214,6 +249,7 @@ function LandingPage() {
     setEmail('');
     setJoinedUser(null);
     setError(null);
+    setFieldErrors({});
   };
 
   const referralLink = joinedUser ? `${window.location.origin}?ref=${joinedUser.referralCode}` : '';
@@ -236,6 +272,7 @@ function LandingPage() {
           checkEmail={checkEmail}
           loading={loading}
           error={error}
+          fieldErrors={fieldErrors}
           joinedUser={joinedUser}
           copied={copied}
           referralLink={referralLink}
@@ -261,16 +298,50 @@ function LandingPage() {
   );
 }
 
+function useEntranceAnimations() {
+  useEffect(() => {
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const targets = Array.from(
+      document.querySelectorAll<HTMLElement>('main > section:not(:first-child), main article > header, main article > div > section, main + footer'),
+    );
+
+    if (reducedMotion || !('IntersectionObserver' in window)) {
+      targets.forEach((target) => target.classList.add('reveal-visible'));
+      return;
+    }
+
+    targets.forEach((target) => target.classList.add('reveal-on-scroll'));
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add('reveal-visible');
+          observer.unobserve(entry.target);
+        });
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -7% 0px' },
+    );
+
+    targets.forEach((target) => observer.observe(target));
+    return () => observer.disconnect();
+  }, []);
+}
+
 export default function App() {
+  useEntranceAnimations();
   const path = window.location.pathname.replace(/\/$/, '') || '/';
 
-  if (path === '/privacy') {
-    return <PrivacyPage />;
-  }
+  const page = path === '/privacy'
+    ? <PrivacyPage />
+    : path === '/terms'
+      ? <TermsPage />
+      : <LandingPage />;
 
-  if (path === '/terms') {
-    return <TermsPage />;
-  }
-
-  return <LandingPage />;
+  return (
+    <>
+      {page}
+      <ConsentAwareAnalytics />
+    </>
+  );
 }

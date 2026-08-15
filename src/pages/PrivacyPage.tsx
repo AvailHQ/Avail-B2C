@@ -7,7 +7,7 @@ const privacySections = [
     id: 'general',
     heading: '1. General',
     paragraphs: [
-      'This Privacy Policy explains how MyAvail collects, stores, and uses personal information when someone visits this website, joins the early access list, follows a referral link, contacts us, or later participates in a beta.',
+      'This Privacy Policy explains how MyAvail collects, stores, and uses personal information when someone visits this website, joins the early access list, contacts us, or later participates in a beta.',
       'MyAvail is being developed as a cycle-aware readiness app for women who train. Because the product may involve health-adjacent and cycle-related information, privacy should be treated as a core product requirement.',
       'This policy is written for the current pre-launch website and early access stage. It should be reviewed by a qualified privacy professional before production health, wearable, payment, or sensitive user data is processed.',
     ],
@@ -16,7 +16,7 @@ const privacySections = [
     id: 'information-collected',
     heading: '2. Information we collect',
     paragraphs: [
-      'At the current website stage, MyAvail may collect contact information such as name, email address, referral code, referral source, and messages sent to us.',
+      'At the current website stage, MyAvail may collect contact information such as name, email address, and messages sent to us.',
       'If payment is later connected through Stripe, payment details should be processed by Stripe. MyAvail should receive payment status, customer identifiers, receipts, and related checkout metadata rather than full card details.',
       'In a future beta, MyAvail may ask for optional onboarding and check-in information such as training background, sleep, fatigue, soreness, perceived readiness, period start or end taps, and wearable signals where a user chooses to connect them.',
     ],
@@ -34,7 +34,7 @@ const privacySections = [
     id: 'how-we-use',
     heading: '4. How we use information',
     paragraphs: [
-      'We use website and early access information to manage the waitlist, understand demand, respond to users, detect duplicate signups, support referrals, and plan beta access.',
+      'We use website and early access information to manage the waitlist, understand demand, respond to users, detect duplicate signups, and plan beta access.',
       'If payment reservations are enabled, we may use payment status to confirm early access reservations, send receipts or confirmations, and manage refunds or credits where applicable.',
       'Future product information should be used to provide readiness context, improve personal baseline modelling, and make the product more useful. It should not be used to diagnose, treat, or replace professional advice.',
     ],
@@ -53,8 +53,8 @@ const privacySections = [
     heading: '6. Cookies, local storage, and analytics',
     paragraphs: [
       'This website may use essential local storage or cookies to keep the site working, remember preferences, and support early access form behaviour.',
-      'With consent, this website uses Vercel Web Analytics to understand aggregated page views and selected interactions such as early-access actions, FAQ opens, audience selections, referral-link copies, and contact clicks.',
-      'Analytics are disabled unless a visitor accepts them. We do not send names, email addresses, referral codes, health information, cycle data, or free-text form content to analytics.',
+      'With consent, this website uses Vercel Web Analytics to understand aggregated page views and selected interactions such as early-access actions, FAQ opens, audience selections, and contact clicks.',
+      'Analytics are disabled unless a visitor accepts them. We do not send names, email addresses, health information, cycle data, or free-text form content to analytics.',
     ],
   },
   {

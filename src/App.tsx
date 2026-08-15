@@ -19,6 +19,8 @@ import { PrivacyPage } from './pages/PrivacyPage';
 import { TermsPage } from './pages/TermsPage';
 import type { UserInfo } from './types';
 import { trackIfConsented } from './lib/analytics';
+import { joinWaitlist } from './lib/convex';
+import { paymentLinkForEmail } from './lib/payments';
 
 const WAITLIST_STORAGE_KEY = 'avail_waitlist_users';
 
@@ -34,8 +36,6 @@ const loadWaitlist = (): UserInfo[] => {
 const saveWaitlist = (users: UserInfo[]) => {
   window.localStorage.setItem(WAITLIST_STORAGE_KEY, JSON.stringify(users));
 };
-
-const createReferralCode = () => Math.random().toString(36).slice(2, 8).toUpperCase();
 
 const appFeatures = [
   {
@@ -91,21 +91,13 @@ function LandingPage() {
   const [status, setStatus] = useState<'join' | 'success' | 'check'>('join');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [referredByCode, setReferredByCode] = useState('');
+  const [consent, setConsent] = useState(false);
   const [checkEmail, setCheckEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ name?: string; email?: string }>({});
   const [joinedUser, setJoinedUser] = useState<UserInfo | null>(null);
-  const [copied, setCopied] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const ref = params.get('ref');
-    if (ref) setReferredByCode(ref.toUpperCase());
-
-  }, []);
 
   useEffect(() => {
     const scrollToHashTarget = () => {
@@ -166,38 +158,29 @@ function LandingPage() {
       const normalizedEmail = email.trim().toLowerCase();
       const existing = users.find((user) => user.email === normalizedEmail);
 
-      if (existing) {
-        setJoinedUser(existing);
-        setStatus('success');
-        fireConfetti();
-        return;
-      }
-
-      const referrer = referredByCode
-        ? users.find((user) => user.referralCode === referredByCode.trim().toUpperCase())
-        : undefined;
-
-      const updatedUsers = referrer
-        ? users.map((user) =>
-            user._id === referrer._id
-              ? { ...user, referralCount: user.referralCount + 1, queuePosition: Math.max(1, user.queuePosition - 10) }
-              : user,
-          )
-        : users;
-
-      const user: UserInfo = {
+      const user: UserInfo = existing ?? {
         _id: crypto.randomUUID(),
         name: name.trim(),
         email: normalizedEmail,
-        referralCode: createReferralCode(),
-        referredBy: referrer?.referralCode,
-        referralCount: 0,
-        queuePosition: updatedUsers.length + 1,
       };
 
-      const nextUsers = [...updatedUsers, user];
-      saveWaitlist(nextUsers);
-      trackIfConsented('waitlist_joined', { referred: Boolean(referrer) });
+      if (!existing) {
+        saveWaitlist([...users, user]);
+      }
+
+      // Best-effort: record the signup in Convex (no-op if not configured).
+      const params = new URLSearchParams(window.location.search);
+      await joinWaitlist({
+        name: user.name,
+        email: user.email,
+        marketingConsent: consent,
+        utmSource: params.get('utm_source') ?? undefined,
+        utmMedium: params.get('utm_medium') ?? undefined,
+        utmCampaign: params.get('utm_campaign') ?? undefined,
+        referrer: document.referrer || undefined,
+      }).catch(() => null);
+
+      trackIfConsented('waitlist_joined');
       setJoinedUser(user);
       setStatus('success');
       fireConfetti();
@@ -230,14 +213,6 @@ function LandingPage() {
     }
   };
 
-  const handleCopy = () => {
-    if (!joinedUser) return;
-    navigator.clipboard.writeText(`${window.location.origin}?ref=${joinedUser.referralCode}`);
-    trackIfConsented('referral_link_copied');
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
-  };
-
   const handleShowJoin = () => {
     setStatus('join');
     setError(null);
@@ -247,12 +222,13 @@ function LandingPage() {
     setStatus('join');
     setName('');
     setEmail('');
+    setConsent(false);
     setJoinedUser(null);
     setError(null);
     setFieldErrors({});
   };
 
-  const referralLink = joinedUser ? `${window.location.origin}?ref=${joinedUser.referralCode}` : '';
+  const paymentUrl = joinedUser ? paymentLinkForEmail(joinedUser.email) : '';
 
   return (
     <div className="relative min-h-screen overflow-x-clip bg-[#F7FAF8] text-[#1B1F23]">
@@ -268,20 +244,19 @@ function LandingPage() {
           status={status}
           name={name}
           email={email}
-          referredByCode={referredByCode}
+          consent={consent}
           checkEmail={checkEmail}
           loading={loading}
           error={error}
           fieldErrors={fieldErrors}
           joinedUser={joinedUser}
-          copied={copied}
-          referralLink={referralLink}
+          paymentUrl={paymentUrl}
           onNameChange={setName}
           onEmailChange={setEmail}
+          onConsentChange={setConsent}
           onCheckEmailChange={setCheckEmail}
           onJoin={handleJoin}
           onCheckStatus={handleCheckStatus}
-          onCopy={handleCopy}
           onShowJoin={handleShowJoin}
           onRegisterAnother={handleRegisterAnother}
         />

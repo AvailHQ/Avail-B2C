@@ -2,35 +2,31 @@ import type { FormEvent } from 'react';
 import {
   AlertTriangle,
   ArrowRight,
-  Check,
   CheckCircle2,
-  Copy,
   Mail,
   RefreshCw,
-  Share2,
   Users,
 } from 'lucide-react';
 import type { UserInfo } from '../../types';
-import { formInputClass, gradientText, pageShell, primaryButtonClass } from './shared';
+import { formInputClass, pageShell, primaryButtonClass } from './shared';
 
 interface EarlyAccessSectionProps {
   status: 'join' | 'success' | 'check';
   name: string;
   email: string;
-  referredByCode: string;
+  consent: boolean;
   checkEmail: string;
   loading: boolean;
   error: string | null;
   fieldErrors: { name?: string; email?: string };
   joinedUser: UserInfo | null;
-  copied: boolean;
-  referralLink: string;
+  paymentUrl: string;
   onNameChange: (value: string) => void;
   onEmailChange: (value: string) => void;
+  onConsentChange: (value: boolean) => void;
   onCheckEmailChange: (value: string) => void;
   onJoin: (event: FormEvent) => void;
   onCheckStatus: (event: FormEvent) => void;
-  onCopy: () => void;
   onShowJoin: () => void;
   onRegisterAnother: () => void;
 }
@@ -39,20 +35,19 @@ export function EarlyAccessSection({
   status,
   name,
   email,
-  referredByCode,
+  consent,
   checkEmail,
   loading,
   error,
   fieldErrors,
   joinedUser,
-  copied,
-  referralLink,
+  paymentUrl,
   onNameChange,
   onEmailChange,
+  onConsentChange,
   onCheckEmailChange,
   onJoin,
   onCheckStatus,
-  onCopy,
   onShowJoin,
   onRegisterAnother,
 }: EarlyAccessSectionProps) {
@@ -113,12 +108,18 @@ export function EarlyAccessSection({
                 {fieldErrors.email && <span id="join-email-error" className="type-caption mt-1.5 block px-2 font-bold text-[#92363D]">{fieldErrors.email}</span>}
               </label>
 
-              {referredByCode && (
-                <div className="type-caption flex items-center gap-2 rounded-lg border border-[#6FBF9E]/20 bg-[#6FBF9E]/8 px-3.5 py-2.5 font-semibold text-[#6FBF9E]">
-                  <Users size={14} />
-                  Referred by <strong>{referredByCode}</strong> - leapfrog boost active!
-                </div>
-              )}
+              <label htmlFor="join-consent" className="flex items-start gap-2.5 text-left">
+                <input
+                  id="join-consent"
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(event) => onConsentChange(event.target.checked)}
+                  className="mt-0.5 size-4 shrink-0 accent-[#4FA3C7]"
+                />
+                <span className="type-caption text-[#64707D]">
+                  Email me occasional Avail updates about early access and launch. Optional - unsubscribe anytime.
+                </span>
+              </label>
 
               <button
                 id="join-submit-btn"
@@ -147,15 +148,15 @@ export function EarlyAccessSection({
                   <strong className="font-black text-[#17333A]">347</strong> founding athletes have already joined
                 </span>
               </p>
-              <p className="type-body mt-1">Priority access. Two months fully credited. Limited places.</p>
+              <p className="type-body mt-1">Priority access. Two months of Avail included.</p>
             </div>
           </>
         )}
 
         {status === 'check' && (
           <>
-            <h2 className="type-feature-title mb-1 font-extrabold text-[#1B1F23]">Check your position</h2>
-            <p className="type-body mb-8 text-[#64707D]">Enter your registration email to retrieve your queue rank and share link.</p>
+            <h2 className="type-feature-title mb-1 font-extrabold text-[#1B1F23]">Check your registration</h2>
+            <p className="type-body mb-8 text-[#64707D]">Enter your email to confirm whether you are already on the early access list.</p>
 
             <form onSubmit={onCheckStatus} noValidate className="flex flex-col gap-5">
               <label className="flex flex-col gap-1.5">
@@ -204,58 +205,14 @@ export function EarlyAccessSection({
 
             <div>
               <h2 className="type-feature-title mb-1 font-extrabold text-[#1B1F23]">Your details are saved, {joinedUser.name.split(' ')[0]}.</h2>
-              <p className="type-body text-[#64707D]">Your place is ready for checkout. Payment will be enabled when the secure checkout is connected.</p>
+              <p className="type-body text-[#64707D]">Reserve your spot to lock in two months of Avail and priority access before launch.</p>
             </div>
 
-            <div className="flex w-full overflow-hidden rounded-2xl border border-black/6 bg-[#F4F8FA]">
-              {[
-                [`#${joinedUser.queuePosition}`, 'Queue Rank'],
-                [joinedUser.referralCount, 'Referrals'],
-                ['+10', 'Per Referral'],
-              ].map(([value, label], index) => (
-                <div key={label} className={`flex flex-1 flex-col items-center px-2 py-5 ${index > 0 ? 'border-l border-black/6' : ''}`}>
-                  <span className={`${gradientText} type-section-title font-black`}>{value}</span>
-                  <span className="type-caption mt-1 font-bold tracking-[0.5px] text-[#64707D] uppercase">{label}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="w-full text-left">
-              <p className="type-caption mb-2 font-bold tracking-[0.5px] text-[#1B1F23] uppercase">Your Referral Link</p>
-              <div className="flex w-full gap-2">
-                <input
-                  className="type-caption min-w-0 flex-1 overflow-hidden rounded-2xl border border-black/10 bg-[#F4F8FA] px-4 py-3 font-mono text-ellipsis whitespace-nowrap text-[#1B1F23]"
-                  value={referralLink}
-                  readOnly
-                  title={referralLink}
-                />
-                <button
-                  className="type-button flex cursor-pointer items-center gap-1.5 rounded-2xl border-0 bg-[#1B1F23] px-5 py-3 font-bold whitespace-nowrap text-white transition hover:bg-[#2b323b]"
-                  onClick={onCopy}
-                >
-                  {copied ? <Check size={15} /> : <Copy size={15} />}
-                  {copied ? 'Copied' : 'Copy'}
-                </button>
-              </div>
-            </div>
-
-            <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
-              <a
-                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Just secured early access to @availapp - the platform built for female athletes. Join me: ${referralLink}`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="type-button flex items-center justify-center gap-2 rounded-lg border border-black/10 bg-white p-3 font-bold text-[#1B1F23] transition hover:border-[#64707D] hover:bg-[#F4F8FA]"
-              >
-                <Share2 size={14} /> Share on X
+            <div className="w-full">
+              <a href={paymentUrl} className={primaryButtonClass}>
+                Reserve early access &middot; &pound;10 <ArrowRight size={16} />
               </a>
-              <a
-                href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(referralLink)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="type-button flex items-center justify-center gap-2 rounded-lg border border-black/10 bg-white p-3 font-bold text-[#1B1F23] transition hover:border-[#64707D] hover:bg-[#F4F8FA]"
-              >
-                <Users size={14} /> LinkedIn
-              </a>
+              <p className="type-caption mt-2 text-[#64707D]">One-time &pound;10 &middot; Two months of Avail &middot; Non-refundable</p>
             </div>
 
             <button

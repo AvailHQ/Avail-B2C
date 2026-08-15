@@ -41,7 +41,7 @@ Primary conversion:
 Planned payment framing:
 
 - one-time low-friction reservation
-- proposed price: GBP 5
+- price: GBP 10 (confirmed)
 - likely payment method: Stripe Payment Link
 
 Secondary conversion:
@@ -55,14 +55,18 @@ The paid early access offer should make the value clear:
 - priority beta access
 - founding member status or early cohort position
 - influence on product direction
-- potential future credit or discount, if confirmed
+- two months of Avail included (the GBP 10 is the first two months of subscription, not a deposit or credit)
 
 Important: do not imply benefits that are not operationally true yet.
 
-Before launch, decide and document:
+Confirmed decisions:
 
-- whether the GBP 5 is refundable
-- whether it credits toward a future subscription
+- price: GBP 10, one-time
+- the reservation is non-refundable
+- early access is not capped by number of users
+
+Still to decide and document before launch:
+
 - when early access is expected
 - what happens if the product does not ship
 - whether the paid reservation creates any account entitlement
@@ -81,7 +85,7 @@ Avoid temporary auth or account actions in the header until they are actually wi
 Potential future header CTA:
 
 - Reserve Early Access
-- Reserve Early Access - GBP 5
+- Reserve Early Access - GBP 10
 
 ## Content Direction
 
@@ -141,10 +145,15 @@ Avoid:
 
 ## Open Questions
 
-- Is the early access reservation refundable?
-- Does the GBP 5 count toward a future subscription?
-- Is the first paid product monthly, annual, or one-time founder access?
-- Will early access be capped by number of users?
 - Should the site collect email before Stripe or send users directly to Stripe?
 - What is the expected beta launch date?
 - What confirmation experience happens after payment?
+- For the separate future subscription (not this launch): what is the price after the first two months, when does billing start, and how do reserved users transition onto it?
+
+## Resolved
+
+- The early access reservation is non-refundable.
+- Price is GBP 10 (up from the earlier GBP 5 proposal).
+- Early access is not capped by number of users.
+- The GBP 10 buys the first two months of Avail (not a deposit or credit); it does not credit toward anything further.
+- The GBP 10 reservation is a standalone, one-time Stripe Payment Link. It is a separate product from any future recurring subscription, which will be set up separately in Stripe later. The current backend only records this one-time reservation.

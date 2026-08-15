@@ -7,7 +7,7 @@ const termsSections = [
     id: 'general',
     heading: '1. General',
     paragraphs: [
-      'These Terms describe the rules for using the MyAvail website, joining the early access list, using referral links, contacting us, and participating in any future early access or beta programme.',
+      'These Terms describe the rules for using the MyAvail website, joining the early access list, contacting us, and participating in any future early access or beta programme.',
       'The current website is a pre-launch experience. Product features, launch timing, pricing, and availability may change as the product develops.',
     ],
   },
@@ -24,7 +24,7 @@ const termsSections = [
     heading: '3. Early access and reservations',
     paragraphs: [
       'Joining the early access list does not guarantee access by a specific date. Access may be limited by product readiness, cohort size, geography, device compatibility, operational capacity, or safety review.',
-      'If a paid reservation is introduced, the checkout page should clearly explain the price, what the payment covers, whether it is refundable, whether it credits toward future subscription fees, and what happens if the product does not launch.',
+      'If a paid reservation is introduced, it is a one-time, non-refundable payment. The checkout page should clearly explain the price, what the payment covers, whether it credits toward future subscription fees, and what happens if the product does not launch.',
       'Payment processing should be handled by Stripe or another payment provider. Additional provider terms may apply.',
     ],
   },
@@ -41,7 +41,6 @@ const termsSections = [
     heading: '5. Acceptable use',
     paragraphs: [
       'Users must not misuse the website, interfere with its operation, attempt unauthorised access, submit malicious content, scrape the service in a way that harms availability, or use the service for unlawful purposes.',
-      'Referral links should not be used for spam, misleading promotions, or impersonation.',
     ],
   },
   {
@@ -74,7 +73,7 @@ export function TermsPage() {
   return (
     <LegalPage
       title="Terms of Use"
-      intro="The terms for using the MyAvail website, early access list, referrals, and future beta access."
+      intro="The terms for using the MyAvail website, early access list, and future beta access."
       updated="Last updated 10 August 2026"
       sections={termsSections}
     />

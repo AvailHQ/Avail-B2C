@@ -354,6 +354,42 @@ export const checkPosition = query({
 });
 
 /**
+ * Look up a reservation by its Stripe Checkout Session id, for the post-payment
+ * success page. Stripe appends `?session_id={CHECKOUT_SESSION_ID}` when it
+ * redirects the payer back, so the session id acts as an unguessable capability
+ * that only the payer holds.
+ *
+ * The webhook sets `stripeSessionId` when it confirms the payment, so a record
+ * is only returned once payment has been processed. The redemption code is
+ * revealed only when the reservation is actually `paid`.
+ */
+export const getBySessionId = query({
+  args: {
+    stripeSessionId: v.string(),
+  },
+  handler: async (ctx: any, args: any) => {
+    const user = await ctx.db
+      .query("waitlist")
+      .withIndex("by_stripeSessionId", (q: any) =>
+        q.eq("stripeSessionId", args.stripeSessionId),
+      )
+      .unique();
+
+    if (user === null) {
+      return { found: false };
+    }
+
+    return {
+      found: true,
+      status: user.status,
+      name: user.name,
+      email: user.email,
+      redemptionCode: user.status === "paid" ? user.redemptionCode : undefined,
+    };
+  },
+});
+
+/**
  * Reservation funnel stats: total signups plus a breakdown by status and
  * total amount reserved (in minor units, e.g. pence).
  */

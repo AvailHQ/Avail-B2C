@@ -35,3 +35,24 @@ export async function joinWaitlist(args: JoinArgs): Promise<JoinResult | null> {
   if (!client) return null;
   return client.action(api.waitlist.submitEarlyAccess, args);
 }
+
+export interface ReservationLookup {
+  found: boolean;
+  status?: 'email_only' | 'pending_payment' | 'paid' | 'refunded';
+  name?: string;
+  email?: string;
+  redemptionCode?: string;
+}
+
+/**
+ * Look up a reservation by its Stripe Checkout Session id for the success page.
+ * Returns null when Convex is not configured. The record only appears once the
+ * webhook has confirmed the payment, so callers should poll until `found` is
+ * true (or give up and show a generic confirmation).
+ */
+export async function getReservationBySession(
+  stripeSessionId: string,
+): Promise<ReservationLookup | null> {
+  if (!client) return null;
+  return client.query(api.waitlist.getBySessionId, { stripeSessionId });
+}

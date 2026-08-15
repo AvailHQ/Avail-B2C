@@ -1,6 +1,7 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { sendEmail, paymentConfirmationEmail } from "./email";
 
 /**
  * Convert an ArrayBuffer to a lowercase hex string.
@@ -101,7 +102,7 @@ const stripeWebhook = httpAction(async (ctx, request) => {
       if (session.payment_status && session.payment_status !== "paid") {
         break;
       }
-      await ctx.runMutation(internal.waitlist.markPaid, {
+      const result = await ctx.runMutation(internal.waitlist.markPaid, {
         stripeSessionId: session.id,
         email: session.customer_details?.email ?? session.customer_email ?? undefined,
         name: session.customer_details?.name ?? undefined,
@@ -112,6 +113,18 @@ const stripeWebhook = httpAction(async (ctx, request) => {
         amountPaid: typeof session.amount_total === "number" ? session.amount_total : undefined,
         currency: session.currency ?? undefined,
       });
+
+      // Send the confirmation email once, on the first time this becomes paid.
+      if (result?.newlyPaid && result.email) {
+        const firstName = String(result.name || "").split(" ")[0] || "there";
+        const { subject, html } = paymentConfirmationEmail(firstName);
+        const sent = await sendEmail({ to: result.email, subject, html });
+        if (sent) {
+          await ctx.runMutation(internal.waitlist.markConfirmationEmailSent, {
+            email: result.email,
+          });
+        }
+      }
       break;
     }
 

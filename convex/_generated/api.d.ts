@@ -8,6 +8,9 @@
  * @module
  */
 
+import type * as email from "../email.js";
+import type * as emailValidation from "../emailValidation.js";
+import type * as http from "../http.js";
 import type * as waitlist from "../waitlist.js";
 
 import type {
@@ -17,6 +20,9 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  email: typeof email;
+  emailValidation: typeof emailValidation;
+  http: typeof http;
   waitlist: typeof waitlist;
 }>;
 

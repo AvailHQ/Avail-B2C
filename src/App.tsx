@@ -17,10 +17,12 @@ import { Header } from './components/landing/Header';
 import { HeroSection } from './components/landing/HeroSection';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { TermsPage } from './pages/TermsPage';
+import { SuccessPage } from './pages/SuccessPage';
 import type { UserInfo } from './types';
 import { trackIfConsented } from './lib/analytics';
 import { joinWaitlist } from './lib/convex';
 import { paymentLinkForEmail } from './lib/payments';
+import { quickValidateEmail } from './lib/emailValidation';
 
 const WAITLIST_STORAGE_KEY = 'avail_waitlist_users';
 
@@ -142,10 +144,10 @@ function LandingPage() {
       return;
     }
 
-    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRe.test(email)) {
-      setFieldErrors({ email: 'Enter a valid email address.' });
-      setError('Please enter a valid email address.');
+    const emailProblem = quickValidateEmail(email);
+    if (emailProblem) {
+      setFieldErrors({ email: emailProblem });
+      setError(emailProblem);
       window.requestAnimationFrame(() => document.getElementById('join-email')?.focus());
       return;
     }
@@ -154,31 +156,40 @@ function LandingPage() {
     setError(null);
     setFieldErrors({});
     try {
-      const users = loadWaitlist();
       const normalizedEmail = email.trim().toLowerCase();
-      const existing = users.find((user) => user.email === normalizedEmail);
 
-      const user: UserInfo = existing ?? {
-        _id: crypto.randomUUID(),
+      // Server-side validating join (also sends the welcome email).
+      // Returns null when Convex is not configured — then we run local-only.
+      const params = new URLSearchParams(window.location.search);
+      const result = await joinWaitlist({
         name: name.trim(),
         email: normalizedEmail,
-      };
-
-      if (!existing) {
-        saveWaitlist([...users, user]);
-      }
-
-      // Best-effort: record the signup in Convex (no-op if not configured).
-      const params = new URLSearchParams(window.location.search);
-      await joinWaitlist({
-        name: user.name,
-        email: user.email,
         marketingConsent: consent,
         utmSource: params.get('utm_source') ?? undefined,
         utmMedium: params.get('utm_medium') ?? undefined,
         utmCampaign: params.get('utm_campaign') ?? undefined,
         referrer: document.referrer || undefined,
       }).catch(() => null);
+
+      // Server rejected the email (fake / undeliverable) — surface and stop.
+      if (result && !result.success) {
+        const message = result.error ?? 'Please check your email address.';
+        setFieldErrors({ email: message });
+        setError(message);
+        window.requestAnimationFrame(() => document.getElementById('join-email')?.focus());
+        return;
+      }
+
+      const users = loadWaitlist();
+      const existing = users.find((user) => user.email === normalizedEmail);
+      const user: UserInfo = existing ?? {
+        _id: crypto.randomUUID(),
+        name: name.trim(),
+        email: normalizedEmail,
+      };
+      if (!existing) {
+        saveWaitlist([...users, user]);
+      }
 
       trackIfConsented('waitlist_joined');
       setJoinedUser(user);
@@ -311,7 +322,9 @@ export default function App() {
     ? <PrivacyPage />
     : path === '/terms'
       ? <TermsPage />
-      : <LandingPage />;
+      : path === '/success'
+        ? <SuccessPage />
+        : <LandingPage />;
 
   return (
     <>

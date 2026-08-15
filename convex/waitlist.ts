@@ -1,5 +1,8 @@
-import { internalMutation, mutation, query } from "./_generated/server";
+import { action, internalMutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { v } from "convex/values";
+import { validateEmail } from "./emailValidation";
+import { sendEmail, welcomeEmail } from "./email";
 
 // Unambiguous alphabet (no 0/O/1/I) so codes are easy to read out if ever needed.
 const REDEMPTION_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -34,12 +37,50 @@ async function generateUniqueRedemptionCode(ctx: any): Promise<string> {
 }
 
 /**
- * Join the early access list, or return the user details if they have already joined.
+ * Public entry point for the signup form. Validates the email (format,
+ * disposable domains, MX) in an action — which can do network I/O — then writes
+ * the record and sends the welcome email. Returns a validation error instead of
+ * writing when the email looks fake.
+ */
+export const submitEarlyAccess = action({
+  args: {
+    name: v.string(),
+    email: v.string(),
+    marketingConsent: v.optional(v.boolean()),
+    privacyPolicyVersion: v.optional(v.string()),
+    utmSource: v.optional(v.string()),
+    utmMedium: v.optional(v.string()),
+    utmCampaign: v.optional(v.string()),
+    referrer: v.optional(v.string()),
+    landingVariant: v.optional(v.string()),
+  },
+  handler: async (ctx: any, args: any): Promise<any> => {
+    const error = await validateEmail(args.email);
+    if (error) {
+      return { success: false, error };
+    }
+
+    const result = await ctx.runMutation(internal.waitlist.join, args);
+
+    // Best-effort welcome email for brand-new signups only.
+    if (result?.user && !result.alreadyJoined) {
+      const firstName = String(result.user.name || "").split(" ")[0] || "there";
+      const { subject, html } = welcomeEmail(firstName);
+      await sendEmail({ to: result.user.email, subject, html });
+    }
+
+    return result;
+  },
+});
+
+/**
+ * Write an early access signup. Internal: reached only through
+ * `submitEarlyAccess`, which validates the email first.
  *
  * A new signup starts in the `email_only` status. The Stripe checkout flow later
  * moves it to `pending_payment` / `paid` via the mutations below.
  */
-export const join = mutation({
+export const join = internalMutation({
   args: {
     name: v.string(),
     email: v.string(),
@@ -183,15 +224,16 @@ export const markPaid = internalMutation({
         return { success: false, reason: "no_match_no_email" };
       }
       const redemptionCode = await generateUniqueRedemptionCode(ctx);
+      const name = args.name?.trim() || email.split("@")[0];
       await ctx.db.insert("waitlist", {
-        name: args.name?.trim() || email.split("@")[0],
+        name,
         email,
         ...paymentFields,
         marketingConsent: false,
         redemptionCode,
         redemptionCodeIssuedAt: Date.now(),
       });
-      return { success: true, created: true };
+      return { success: true, newlyPaid: true, email, name };
     }
 
     // Idempotent: a webhook may be delivered more than once. Return early so we
@@ -208,7 +250,7 @@ export const markPaid = internalMutation({
       redemptionCode,
       redemptionCodeIssuedAt: user.redemptionCodeIssuedAt ?? Date.now(),
     });
-    return { success: true };
+    return { success: true, newlyPaid: true, email: user.email, name: user.name };
   },
 });
 

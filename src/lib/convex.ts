@@ -19,11 +19,19 @@ export interface JoinArgs {
   referrer?: string;
 }
 
+export interface JoinResult {
+  success: boolean;
+  error?: string;
+  alreadyJoined?: boolean;
+}
+
 /**
- * Record an early access signup in Convex. Returns null when Convex is not
- * configured so callers can fall back to their local-only behaviour.
+ * Record an early access signup in Convex via the validating action. Returns
+ * null when Convex is not configured so callers can fall back to local-only
+ * behaviour; otherwise returns the action result (which may carry a validation
+ * error to show the user).
  */
-export async function joinWaitlist(args: JoinArgs) {
+export async function joinWaitlist(args: JoinArgs): Promise<JoinResult | null> {
   if (!client) return null;
-  return client.mutation(api.waitlist.join, args);
+  return client.action(api.waitlist.submitEarlyAccess, args);
 }

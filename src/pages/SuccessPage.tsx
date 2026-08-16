@@ -3,12 +3,7 @@ import { CircleAlert, CheckCircle2, Loader2 } from 'lucide-react';
 import { Header } from '../components/landing/Header';
 import { Footer } from '../components/landing/Footer';
 import { pageShell, primaryButtonClass } from '../components/landing/shared';
-import { getReservationBySession, type ReservationLookup } from '../lib/convex';
-
-// The webhook confirms payment a moment after Stripe redirects the payer here,
-// so poll briefly for the record before falling back to a generic confirmation.
-const POLL_INTERVAL_MS = 1500;
-const MAX_ATTEMPTS = 10;
+import { pollReservation } from '../lib/reservationPolling';
 
 type LookupState =
   | { phase: 'idle' }
@@ -35,50 +30,19 @@ export function SuccessPage() {
       return;
     }
 
-    let cancelled = false;
-    let attempts = 0;
     setState({ phase: 'confirming' });
 
-    const poll = async () => {
-      attempts += 1;
-      let result: ReservationLookup | null = null;
-      try {
-        result = await getReservationBySession(sessionId);
-      } catch {
-        // Network hiccup — treated like "not ready yet" and retried below.
-      }
-      if (cancelled) return;
-
-      if (result === null) {
-        // Convex not configured on this build.
-        setState({ phase: 'unverified' });
-        return;
-      }
-
-      if (result.found && result.status === 'paid') {
+    return pollReservation(sessionId, {
+      onPaid: (reservation) =>
         setState({
           phase: 'paid',
-          email: result.email,
-          name: result.name,
-          redemptionCode: result.redemptionCode,
-          confirmationEmailSent: result.confirmationEmailSent === true,
-        });
-        return;
-      }
-
-      if (attempts >= MAX_ATTEMPTS) {
-        setState({ phase: 'unverified' });
-        return;
-      }
-
-      window.setTimeout(poll, POLL_INTERVAL_MS);
-    };
-
-    poll();
-
-    return () => {
-      cancelled = true;
-    };
+          email: reservation.email,
+          name: reservation.name,
+          redemptionCode: reservation.redemptionCode,
+          confirmationEmailSent: reservation.confirmationEmailSent === true,
+        }),
+      onUnverified: () => setState({ phase: 'unverified' }),
+    });
   }, []);
 
   const firstName =
@@ -99,7 +63,7 @@ export function SuccessPage() {
                 Confirming your reservation&hellip;
               </h1>
               <p className="type-body text-[#64707D]">
-                Your payment went through &mdash; we&rsquo;re just finishing up. This
+                We&rsquo;re checking your reservation with our payment provider. This
                 only takes a moment.
               </p>
             </div>

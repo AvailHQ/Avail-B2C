@@ -534,3 +534,132 @@ still leaving `refundedAt` untouched per REF-02.
 Gate 4 (success-page Playwright UI-01–07; signup abuse/rate-limit ABUSE-01–06)
 and Gate 5 (manual Stripe sandbox acceptance matrix: 3DS, declines, abandoned
 checkout, duplicate payments, partial refund).
+
+---
+
+## 2026-08-16 — Gate 4: browser states + signup abuse controls
+
+- **Author:** Claude Opus 4.8 (`claude-opus-4-8`), via Claude Code
+- **Branch:** `main`
+- **Scope:** Close Gate 4 — deterministic success-page browser tests (UI-01–07)
+  and abuse controls on the public signup action (ABUSE-01–06).
+
+### Bug found & fixed — a network blip stranded paying customers
+
+Writing UI-05 exposed a real defect in `SuccessPage`: the poll caught lookup
+errors into a `result` that stayed `null`, but `null` was also the "Convex not
+configured" sentinel, so the very next branch gave up immediately. Despite the
+comment claiming a retry, **a single transient failure showed the "we couldn't
+verify" page instead of the redemption code** — exactly the moment (right after
+payment, often on mobile) when a blip is most likely. Transient failures are now
+distinguished from the permanent not-configured case and go through the bounded
+retry. The test proved it: UI-05 went from settling in 1.4s to using the full
+~15s budget, and new UI-05b shows recovery on the second poll.
+
+### Abuse controls (new)
+
+- `convex/inputLimits.ts`: size limits for name/email/UTM/referrer/variant,
+  checked first — before any database, DNS, or email work (ABUSE-03).
+- `convex/emailValidation.ts`: the DNS-over-HTTPS lookups now run under an
+  `AbortController` with a 3s timeout and still fail open, so a slow resolver
+  cannot hold the signup action open (ABUSE-04).
+- `convex/rateLimit.ts` + `rateLimits` table: fixed-window buckets consumed in a
+  single transaction. Convex actions expose no client IP, so the buckets are
+  per-normalized-email (3 / 10 min) and global (60 / min). `submitEarlyAccess`
+  now checks sizes → rate limits → DNS, so burst traffic cannot amplify DNS or
+  Resend spend, and varying the email cannot bypass the global cap (ABUSE-05).
+
+### Tests
+
+- `tests/payment-success.spec.ts` (8 × 2 projects = 16): UI-01–07 plus UI-05b.
+  The reservation lookup is controlled by intercepting the Convex `/api/query`
+  request, **not** by adding a seam to the component — production code carries
+  no test hook and the tests run offline.
+- `tests/convex/signupAbuse.test.ts` (9): ABUSE-01–06 with `fetch` stubbed for
+  both DNS and Resend, plus rate-limit window expiry. ABUSE-03 asserts zero DNS
+  calls occur for oversized input; ABUSE-04's ~3s runtime is itself the evidence
+  that the abort fires rather than waiting on the 30s stub.
+
+### Review round — three findings fixed, two more found while fixing them
+
+**P1 — the page claimed success before verifying.** The "confirming" state read
+"Your payment went through", so anyone opening `/success?session_id=<anything>`
+saw that claim for up to ~15s. That breaks the Gate 4 invariant directly. Copy
+is now "We're checking your reservation with our payment provider."
+
+**P1 — UI-07 was not testing unmount cleanup.** The test navigated with
+`page.goto('/')`, a full page load that tears down the JS context, so React's
+cleanup never ran. This app has no client-side routing, so a true unmount is not
+reachable from the browser at all. The polling logic was therefore extracted to
+`src/lib/reservationPolling.ts` (the effect is now a thin wrapper) and the
+cancellation contract is covered by `tests/unit/reservationPolling.test.ts`. The
+Playwright test was renamed to what it actually verifies. Extracting also
+surfaced a defect: the `cancelled` flag alone let an already-queued retry fire
+one more lookup after teardown, so cancel now clears the timer too.
+
+**P2 — the rate-limit table grew forever and stored raw emails.** One row per
+distinct address, kept indefinitely, holding unvalidated attacker-supplied
+strings (and personal data) purely as a side effect. Keys are now SHA-256
+hashes computed in the action, and `cleanupExpired` (cron in `convex/crons.ts`,
+indexed by `windowStart`) drops stale windows.
+
+**P2 follow-up — the first cleanup could not keep up.** A single capped pass
+deleted at most 500 rows per run while the global limit alone permits 60 new
+buckets a minute (~86k a day), so the table still grew under sustained abuse.
+Three changes close the gap: the job now reschedules itself while it keeps
+filling batches (each pass commits its deletes first, so the drain always
+progresses and terminates); the cron runs hourly instead of daily; and retention
+drops from 24h to 1h, which only has to exceed the longest window (10 min).
+Covered by a test that drains a 12-row backlog with a batch size of 5.
+
+**Found while fixing: the email assertions were vacuous.** `sendEmail` returns
+early when `RESEND_API_KEY` is unset, which it is under convex-test — so no
+request was ever made and ABUSE-06 passed without exercising anything. The tests
+now stub the env, which made the reviewer's suggested `calls.resend === 1`
+assertion meaningful: three concurrent signups send exactly one welcome email.
+
+**Found while fixing: `npx playwright test` was broken.** `testDir: './tests'`
+with the default pattern also matched the Vitest suites, so the bare command
+failed on them. `testMatch: '**/*.spec.ts'` fixes it. This also explains the
+reviewer's a11y `ERR_CONNECTION_REFUSED`: running specs in separate concurrent
+invocations races the shared `webServer`. One invocation runs all 26 green.
+
+### Verification
+
+Vitest 62 passed (26 unit + 36 convex), stable across three consecutive runs;
+Playwright 26 passed in a single run (16 payment-UI + 10 a11y); `oxlint`,
+`tsc -b` + `vite build`, `convex codegen --typecheck`, and `git diff --check`
+all clean.
+
+### Remaining
+
+Gate 5 only: the manual Stripe sandbox acceptance matrix (3DS, declined/failed
+payments, abandoned checkout, duplicate payment with the same email, partial
+refund), recorded per the checklist in `docs/stripe-security-testing.md`.
+
+### Codex follow-up verification
+
+Reviewed the Gate 4 fixes against the previous findings and reran the complete
+local verification suite.
+
+- **Verified fixed:** the confirming state now uses neutral copy and does not
+  claim that an unverified payment succeeded.
+- **Verified fixed:** reservation polling is extracted behind a cancellation
+  contract; cancellation clears the queued timer and suppresses an in-flight
+  result. Unit tests cover both cases.
+- **Verified fixed:** signup tests configure the Resend environment and assert
+  that three concurrent submissions create one record and exactly one welcome
+  email request.
+- **Verified fixed:** email bucket keys are SHA-256-derived rather than raw
+  addresses, and expired rows are indexed for cleanup.
+- **Capacity follow-up resolved:** `cleanupExpired` now processes capped batches
+  and immediately reschedules itself whenever a batch is full, continuing until
+  the stale backlog is empty. The cron runs hourly, retention is one hour (still
+  longer than the longest 10-minute rate-limit window), and regression coverage
+  proves that a backlog larger than one batch is fully drained without deleting
+  a current bucket.
+
+Verification on this review: Vitest **61/61**, Playwright **26/26** in one run,
+`npm run lint`, `npm run build`, and `git diff --check` all passed. The cleanup
+follow-up was subsequently verified with Vitest **62/62** passing, so Gate 4 is
+complete.

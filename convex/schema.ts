@@ -93,4 +93,19 @@ export default defineSchema({
     type: v.string(),
     processedAt: v.number(),
   }).index("by_eventId", ["eventId"]),
+
+  /**
+   * Fixed-window counters protecting expensive public actions (ABUSE-05).
+   * `key` identifies the bucket (e.g. one email, or the global signup bucket);
+   * the window resets once `windowStart` is older than the configured window.
+   */
+  rateLimits: defineTable({
+    key: v.string(),
+    windowStart: v.number(),
+    count: v.number(),
+  })
+    .index("by_key", ["key"])
+    // Supports the scheduled cleanup that stops this table growing without
+    // bound (one row per distinct email would otherwise persist forever).
+    .index("by_windowStart", ["windowStart"]),
 });

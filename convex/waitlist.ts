@@ -4,6 +4,13 @@ import { v } from "convex/values";
 import { validateEmail } from "./emailValidation";
 import { sendEmail, welcomeEmail } from "./email";
 import { isValidRedemptionCode } from "./redemptionCode";
+import { validateInputSizes } from "./inputLimits";
+import {
+  GLOBAL_SIGNUP_KEY,
+  SIGNUP_EMAIL_LIMIT,
+  SIGNUP_GLOBAL_LIMIT,
+  emailSignupKey,
+} from "./rateLimit";
 
 /**
  * Select the first secure candidate not already present in the database. The
@@ -65,6 +72,30 @@ export const submitEarlyAccess = action({
     landingVariant: v.optional(v.string()),
   },
   handler: async (ctx: any, args: any): Promise<any> => {
+    // 1. Size limits first: cheapest check, no database or network work.
+    const sizeError = validateInputSizes(args);
+    if (sizeError) {
+      return { success: false, error: sizeError };
+    }
+
+    // 2. Rate limits before the DNS lookup and the email send, so burst traffic
+    //    cannot amplify those (ABUSE-05). Global bucket first: it is the one
+    //    protecting spend, and it must not be bypassable by varying the email.
+    for (const bucket of [
+      { key: GLOBAL_SIGNUP_KEY, ...SIGNUP_GLOBAL_LIMIT },
+      { key: await emailSignupKey(args.email), ...SIGNUP_EMAIL_LIMIT },
+    ]) {
+      const limit = await ctx.runMutation(internal.rateLimit.consume, bucket);
+      if (!limit.allowed) {
+        return {
+          success: false,
+          rateLimited: true,
+          error: "Too many attempts just now. Please try again in a few minutes.",
+        };
+      }
+    }
+
+    // 3. Network validation (bounded by DNS_LOOKUP_TIMEOUT_MS).
     const error = await validateEmail(args.email);
     if (error) {
       return { success: false, error };

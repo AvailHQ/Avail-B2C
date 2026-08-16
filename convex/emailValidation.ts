@@ -54,19 +54,30 @@ export function isDisposableDomain(email: string): boolean {
   return DISPOSABLE_DOMAINS.has(emailDomain(email));
 }
 
+// Upper bound for each DNS-over-HTTPS lookup. Without it a slow resolver would
+// hold the signup action open indefinitely (ABUSE-04).
+export const DNS_LOOKUP_TIMEOUT_MS = 3000;
+
 /**
  * Check that the domain can receive mail, via DNS-over-HTTPS. Rejects only when
  * the domain clearly does not exist or has no MX and no A record. Any network
- * error fails open (returns true) so a DNS hiccup never blocks a real user.
+ * error — including the lookup timing out — fails open (returns true) so a DNS
+ * hiccup never blocks a real user.
  */
 export async function domainCanReceiveMail(domain: string): Promise<boolean> {
   const query = async (type: 'MX' | 'A') => {
-    const res = await fetch(
-      `https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=${type}`,
-      { headers: { accept: 'application/dns-json' } },
-    );
-    if (!res.ok) return null;
-    return (await res.json()) as { Status: number; Answer?: { type: number }[] };
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), DNS_LOOKUP_TIMEOUT_MS);
+    try {
+      const res = await fetch(
+        `https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=${type}`,
+        { headers: { accept: 'application/dns-json' }, signal: controller.signal },
+      );
+      if (!res.ok) return null;
+      return (await res.json()) as { Status: number; Answer?: { type: number }[] };
+    } finally {
+      clearTimeout(timer);
+    }
   };
 
   try {

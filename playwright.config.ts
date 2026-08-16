@@ -2,6 +2,9 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
+  // Only Playwright specs. Without this, the default pattern also matches the
+  // Vitest suites under tests/unit and tests/convex, which cannot run here.
+  testMatch: '**/*.spec.ts',
   outputDir: 'test-results',
   fullyParallel: true,
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],

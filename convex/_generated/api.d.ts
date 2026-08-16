@@ -8,10 +8,13 @@
  * @module
  */
 
+import type * as crons from "../crons.js";
 import type * as email from "../email.js";
 import type * as emailValidation from "../emailValidation.js";
 import type * as http from "../http.js";
+import type * as inputLimits from "../inputLimits.js";
 import type * as paymentEmail from "../paymentEmail.js";
+import type * as rateLimit from "../rateLimit.js";
 import type * as redemptionCode from "../redemptionCode.js";
 import type * as stripeSecurity from "../stripeSecurity.js";
 import type * as stripeSignature from "../stripeSignature.js";
@@ -24,10 +27,13 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  crons: typeof crons;
   email: typeof email;
   emailValidation: typeof emailValidation;
   http: typeof http;
+  inputLimits: typeof inputLimits;
   paymentEmail: typeof paymentEmail;
+  rateLimit: typeof rateLimit;
   redemptionCode: typeof redemptionCode;
   stripeSecurity: typeof stripeSecurity;
   stripeSignature: typeof stripeSignature;

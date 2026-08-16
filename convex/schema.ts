@@ -40,6 +40,11 @@ export default defineSchema({
     paidAt: v.optional(v.number()),
     refundedAt: v.optional(v.number()),
 
+    // Extra PaymentIntents seen for an already-paid reservation. Policy is one
+    // reservation per email, so a genuine second payment is recorded here (not
+    // silently dropped and not granted a second code) for manual refund.
+    duplicatePaymentIntents: v.optional(v.array(v.string())),
+
     // --- Consent / compliance (UK GDPR) ---
     marketingConsent: v.boolean(),
     consentedAt: v.optional(v.number()),
@@ -68,4 +73,18 @@ export default defineSchema({
     .index("by_stripeSessionId", ["stripeSessionId"])
     .index("by_stripePaymentIntentId", ["stripePaymentIntentId"])
     .index("by_redemptionCode", ["redemptionCode"]),
+
+  /**
+   * Processed Stripe webhook events, keyed by the top-level `event.id`. The
+   * webhook claims an event here inside the same transaction as its business
+   * mutation, so a redelivered or concurrent duplicate of the same event is a
+   * no-op (Convex serializes the conflicting writes). If the business mutation
+   * throws, the whole transaction — including this claim — rolls back, so the
+   * event can be retried.
+   */
+  stripeEvents: defineTable({
+    eventId: v.string(),
+    type: v.string(),
+    processedAt: v.number(),
+  }).index("by_eventId", ["eventId"]),
 });

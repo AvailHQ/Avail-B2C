@@ -387,3 +387,55 @@ PaymentIntent (`pi_3U57kJC…`) in the Stripe sandbox dashboard:
 - Remaining: Gate 2 idempotency tests (`docs/stripe-security-testing.md`).
 - Uncommitted at time of writing: `src/pages/SuccessPage.tsx` (jump polish),
   `docs/production-cutover.md`, `docs/developer-log.md`.
+
+---
+
+## 2026-08-16 — Gate 2: webhook idempotency + a refund-restore bug fix
+
+- **Author:** Claude Opus 4.8 (`claude-opus-4-8`), via Claude Code
+- **Branch:** `main`
+- **Scope:** Make Stripe webhook processing idempotent (redelivery/concurrency
+  safe) and fix a real bug found while reading the code.
+
+### Bug found & fixed (IDEM-06)
+
+`markPaid` only short-circuited on `status === "paid"`. If a reservation was
+already `refunded` and a late/duplicate `checkout.session.completed` arrived
+(Stripe retries are common), it fell through and patched the record back to
+`paid`, re-issuing the entitlement. Now a paid event for a `refunded` reservation
+is ignored (`alreadyRefunded`).
+
+### Business decision recorded
+
+One reservation per email (matches the one-time £10 model). A genuinely separate
+second payment for an already-paid email is **not** given a second code; its
+PaymentIntent is appended to `duplicatePaymentIntents` and logged for manual
+refund (IDEM-05).
+
+### Changes
+
+- `convex/schema.ts`: new `stripeEvents` table (`eventId` indexed) for event
+  dedup; new optional `waitlist.duplicatePaymentIntents` field. Both additions
+  are backward-compatible.
+- `convex/waitlist.ts`: `claimStripeEvent(ctx, eventId, type)` helper claims an
+  event id in the same transaction as the business write — Convex's serializable
+  execution makes redelivery/concurrency a no-op, and a later throw rolls the
+  claim back so retries still work. `markPaid`/`markRefunded` now take `eventId`,
+  dedup on it, guard against restoring a refunded record, flag duplicate
+  payments, and no longer overwrite `refundedAt` on a second distinct refund
+  event.
+- `convex/http.ts`: pass the top-level `event.id` into both mutations.
+
+### Verification
+
+- `tests/convex/webhookIdempotency.test.ts`: 11 tests covering IDEM-01–07,
+  PAY-08/09, and REF-01/02/04 (plus refund-event dedup).
+- Full suite 30 passed (19 Gate 1 unit + 11 Gate 2 convex); `oxlint` clean;
+  `tsc -b` + `vite build` pass. Functions deployed to `basic-otter-332`; the
+  live webhook still returns 400 to an unsigned probe (no 500 regression).
+
+### Note
+
+Gate 2 code is deployed to the dev deployment (via `convex dev`/codegen) but the
+source is uncommitted. `docs/stripe-security-testing.md` Gate 3+ (partial-refund
+policy, public-data-boundary tests, browser/abuse gates) remain.

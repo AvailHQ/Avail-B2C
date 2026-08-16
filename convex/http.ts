@@ -50,6 +50,7 @@ const stripeWebhook = httpAction(async (ctx, request) => {
         return new Response(null, { status: 200 });
       }
       const result = await ctx.runMutation(internal.waitlist.markPaid, {
+        eventId: event.id,
         stripeSessionId: session.id,
         email: session.customer_details?.email ?? session.customer_email ?? undefined,
         name: session.customer_details?.name ?? undefined,
@@ -79,6 +80,7 @@ const stripeWebhook = httpAction(async (ctx, request) => {
     case "charge.refunded": {
       const charge = event.data?.object ?? {};
       await ctx.runMutation(internal.waitlist.markRefunded, {
+        eventId: event.id,
         stripePaymentIntentId:
           typeof charge.payment_intent === "string" ? charge.payment_intent : undefined,
       });

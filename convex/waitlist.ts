@@ -27,6 +27,26 @@ async function selectUniqueRedemptionCode(ctx: any, candidates: string[]): Promi
 }
 
 /**
+ * Claim a Stripe event id inside the current transaction. Returns true the first
+ * time an event is seen (caller should process it) and false if it was already
+ * processed (caller treats it as a no-op). Because the claim happens in the same
+ * mutation as the business write, Convex's serializable execution makes repeated
+ * or concurrent deliveries of the same event idempotent; and if the business
+ * write later throws, this claim rolls back with it so the event can be retried.
+ */
+async function claimStripeEvent(ctx: any, eventId: string, type: string): Promise<boolean> {
+  const existing = await ctx.db
+    .query("stripeEvents")
+    .withIndex("by_eventId", (q: any) => q.eq("eventId", eventId))
+    .unique();
+  if (existing !== null) {
+    return false;
+  }
+  await ctx.db.insert("stripeEvents", { eventId, type, processedAt: Date.now() });
+  return true;
+}
+
+/**
  * Public entry point for the signup form. Validates the email (format,
  * disposable domains, MX) in an action — which can do network I/O — then writes
  * the record and sends the welcome email. Returns a validation error instead of
@@ -171,6 +191,7 @@ export const markPendingPayment = internalMutation({
  */
 export const markPaid = internalMutation({
   args: {
+    eventId: v.string(),
     stripeSessionId: v.string(),
     email: v.optional(v.string()),
     name: v.optional(v.string()),
@@ -181,6 +202,18 @@ export const markPaid = internalMutation({
     redemptionCodeCandidates: v.array(v.string()),
   },
   handler: async (ctx: any, args: any) => {
+    // Idempotency: process each Stripe event at most once (covers redelivery and
+    // concurrent delivery of the same event). Claimed atomically with the writes
+    // below, so a throw later rolls the claim back and allows a retry.
+    const firstDelivery = await claimStripeEvent(
+      ctx,
+      args.eventId,
+      "checkout.session.completed",
+    );
+    if (!firstDelivery) {
+      return { success: true, deduped: true };
+    }
+
     const email = args.email ? args.email.trim().toLowerCase() : undefined;
 
     // 1. Match by Checkout Session id (custom-checkout flow set it beforehand).
@@ -230,9 +263,30 @@ export const markPaid = internalMutation({
       return { success: true, newlyPaid: true, email, name };
     }
 
-    // Idempotent: a webhook may be delivered more than once. Return early so we
-    // do not overwrite the timestamp or issue a second redemption code.
+    // A late or duplicate completion event must never restore a reservation that
+    // has since been refunded (would silently re-grant the entitlement).
+    if (user.status === "refunded") {
+      console.warn(`Ignoring paid event for refunded reservation ${user._id}`);
+      return { success: true, alreadyRefunded: true };
+    }
+
+    // Already paid. Policy is one reservation per email, so a genuinely separate
+    // second payment (a different Checkout Session, not a webhook retry) is
+    // recorded for manual refund rather than issuing a second code.
     if (user.status === "paid") {
+      const isSamePayment = user.stripeSessionId === args.stripeSessionId;
+      if (!isSamePayment && args.stripePaymentIntentId) {
+        const dupes = user.duplicatePaymentIntents ?? [];
+        if (!dupes.includes(args.stripePaymentIntentId)) {
+          await ctx.db.patch(user._id, {
+            duplicatePaymentIntents: [...dupes, args.stripePaymentIntentId],
+          });
+          console.warn(
+            `Duplicate payment for already-paid reservation ${user._id}: ${args.stripePaymentIntentId}`,
+          );
+          return { success: true, alreadyPaid: true, duplicatePayment: true };
+        }
+      }
       return { success: true, alreadyPaid: true };
     }
 
@@ -261,10 +315,17 @@ export const markPaid = internalMutation({
  */
 export const markRefunded = internalMutation({
   args: {
+    eventId: v.string(),
     stripePaymentIntentId: v.optional(v.string()),
     stripeSessionId: v.optional(v.string()),
   },
   handler: async (ctx: any, args: any) => {
+    // Process each refund event at most once (redelivery / concurrency safe).
+    const firstDelivery = await claimStripeEvent(ctx, args.eventId, "charge.refunded");
+    if (!firstDelivery) {
+      return { success: true, deduped: true };
+    }
+
     let user = null;
 
     if (args.stripePaymentIntentId) {
@@ -287,6 +348,12 @@ export const markRefunded = internalMutation({
 
     if (user === null) {
       return { success: false, reason: "not_found" };
+    }
+
+    // A distinct second refund event for the same reservation must not overwrite
+    // the original refund timestamp.
+    if (user.status === "refunded") {
+      return { success: true, alreadyRefunded: true };
     }
 
     await ctx.db.patch(user._id, {

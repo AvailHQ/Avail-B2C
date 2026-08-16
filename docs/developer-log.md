@@ -439,3 +439,35 @@ refund (IDEM-05).
 Gate 2 code is deployed to the dev deployment (via `convex dev`/codegen) but the
 source is uncommitted. `docs/stripe-security-testing.md` Gate 3+ (partial-refund
 policy, public-data-boundary tests, browser/abuse gates) remain.
+
+---
+
+## 2026-08-16 — Gate 2 follow-up: retry-safe refunds and confirmation email delivery
+
+- **Author:** Codex (GPT-5), via Codex desktop
+- **Branch:** `main`
+- **Scope:** Fix two retry gaps identified during review of the Gate 2 webhook
+  implementation.
+
+### Changes
+
+- Refund events are no longer claimed before their PaymentIntent can be matched.
+  An unmatched refund now fails the webhook transaction, leaves the event id
+  unclaimed, and returns an HTTP failure so Stripe can retry it after the payment
+  record becomes available.
+- Payment confirmation email delivery now runs as a durable Convex scheduled
+  action created atomically with the paid-state transition. Failed sends are
+  recorded and retried up to six times with exponential backoff; successful
+  delivery is recorded by waitlist id and suppresses later attempts.
+- The Stripe HTTP action no longer sends confirmation mail inline, so webhook
+  redelivery and email retry are independent concerns.
+
+### Verification
+
+- Added regression coverage proving an early refund remains unclaimed and can
+  later be replayed successfully, plus confirmation-email state coverage proving
+  failed attempts remain eligible until a successful attempt.
+- Full suite: 31 tests passed. `npm run lint`, `npm run build`, and
+  `git diff --check` pass.
+- `npx convex codegen --typecheck enable` passed and uploaded the updated
+  functions to the configured Convex development deployment.

@@ -1,4 +1,4 @@
-import { action, internalMutation, query } from "./_generated/server";
+import { action, internalMutation, internalQuery, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { validateEmail } from "./emailValidation";
@@ -252,13 +252,17 @@ export const markPaid = internalMutation({
         args.redemptionCodeCandidates,
       );
       const name = args.name?.trim() || email.split("@")[0];
-      await ctx.db.insert("waitlist", {
+      const userId = await ctx.db.insert("waitlist", {
         name,
         email,
         ...paymentFields,
         marketingConsent: false,
         redemptionCode,
         redemptionCodeIssuedAt: Date.now(),
+      });
+      await ctx.scheduler.runAfter(0, internal.paymentEmail.sendPaymentConfirmation, {
+        waitlistId: userId,
+        attempt: 1,
       });
       return { success: true, newlyPaid: true, email, name };
     }
@@ -300,7 +304,22 @@ export const markPaid = internalMutation({
       redemptionCode,
       redemptionCodeIssuedAt: user.redemptionCodeIssuedAt ?? Date.now(),
     });
+    await ctx.scheduler.runAfter(0, internal.paymentEmail.sendPaymentConfirmation, {
+      waitlistId: user._id,
+      attempt: 1,
+    });
     return { success: true, newlyPaid: true, email: user.email, name: user.name };
+  },
+});
+
+export const getPaymentEmailRecipient = internalQuery({
+  args: { waitlistId: v.id("waitlist") },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.waitlistId);
+    if (user === null || user.status !== "paid" || user.confirmationEmailSentAt) {
+      return null;
+    }
+    return { email: user.email, name: user.name };
   },
 });
 
@@ -320,12 +339,6 @@ export const markRefunded = internalMutation({
     stripeSessionId: v.optional(v.string()),
   },
   handler: async (ctx: any, args: any) => {
-    // Process each refund event at most once (redelivery / concurrency safe).
-    const firstDelivery = await claimStripeEvent(ctx, args.eventId, "charge.refunded");
-    if (!firstDelivery) {
-      return { success: true, deduped: true };
-    }
-
     let user = null;
 
     if (args.stripePaymentIntentId) {
@@ -347,7 +360,17 @@ export const markRefunded = internalMutation({
     }
 
     if (user === null) {
-      return { success: false, reason: "not_found" };
+      // Do not claim the event: the payment write may be temporarily lagging
+      // behind Stripe's refund event. Throwing makes the webhook return 500 so
+      // Stripe retries once the matching reservation exists.
+      throw new Error("Refunded payment was not found; retry the Stripe event");
+    }
+
+    // Claim only after a matching reservation exists. This keeps an early
+    // refund delivery retryable while retaining atomic deduplication.
+    const firstDelivery = await claimStripeEvent(ctx, args.eventId, "charge.refunded");
+    if (!firstDelivery) {
+      return { success: true, deduped: true };
     }
 
     // A distinct second refund event for the same reservation must not overwrite
@@ -371,21 +394,22 @@ export const markRefunded = internalMutation({
  */
 export const markConfirmationEmailSent = internalMutation({
   args: {
-    email: v.string(),
+    waitlistId: v.id("waitlist"),
+    attempt: v.number(),
+    sent: v.boolean(),
   },
   handler: async (ctx: any, args: any) => {
-    const email = args.email.trim().toLowerCase();
-    const user = await ctx.db
-      .query("waitlist")
-      .withIndex("by_email", (q: any) => q.eq("email", email))
-      .unique();
-
+    const user = await ctx.db.get(args.waitlistId);
     if (user === null) {
       return { success: false, reason: "not_found" };
     }
 
     await ctx.db.patch(user._id, {
-      confirmationEmailSentAt: Date.now(),
+      confirmationEmailAttempts: args.attempt,
+      confirmationEmailLastAttemptAt: Date.now(),
+      confirmationEmailSentAt: args.sent
+        ? (user.confirmationEmailSentAt ?? Date.now())
+        : user.confirmationEmailSentAt,
     });
     return { success: true };
   },

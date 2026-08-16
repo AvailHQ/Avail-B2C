@@ -208,14 +208,53 @@ describe("markRefunded — refund lifecycle", () => {
     expect(second.deduped).toBe(true);
   });
 
-  it("REF-04: a refund for an unknown payment intent is a controlled not_found", async () => {
+  it("REF-04: an early refund remains unclaimed so Stripe can retry it", async () => {
     const t = convexTest(schema, modules);
-    const res: any = await t.mutation(internal.waitlist.markRefunded, {
-      eventId: "evt_unknown",
-      stripePaymentIntentId: "pi_missing",
-    });
+    await expect(
+      t.mutation(internal.waitlist.markRefunded, {
+        eventId: "evt_unknown",
+        stripePaymentIntentId: "pi_missing",
+      }),
+    ).rejects.toThrow("retry the Stripe event");
+    expect(await eventCount(t)).toBe(0);
 
-    expect(res.success).toBe(false);
-    expect(res.reason).toBe("not_found");
+    await t.mutation(internal.waitlist.markPaid, paidArgs());
+    const retried: any = await t.mutation(internal.waitlist.markRefunded, {
+      eventId: "evt_unknown",
+      stripePaymentIntentId: "pi_1",
+    });
+    expect(retried.success).toBe(true);
+    expect((await recordByEmail(t, PAYER)).status).toBe("refunded");
+  });
+});
+
+describe("payment confirmation email retries", () => {
+  it("keeps an unsent confirmation eligible until a later attempt succeeds", async () => {
+    const t = convexTest(schema, modules);
+    await t.mutation(internal.waitlist.markPaid, paidArgs());
+    const rec = await recordByEmail(t, PAYER);
+
+    expect(
+      await t.query(internal.waitlist.getPaymentEmailRecipient, { waitlistId: rec._id }),
+    ).toEqual({ email: PAYER, name: "Test Payer" });
+
+    await t.mutation(internal.waitlist.markConfirmationEmailSent, {
+      waitlistId: rec._id,
+      attempt: 1,
+      sent: false,
+    });
+    expect(
+      await t.query(internal.waitlist.getPaymentEmailRecipient, { waitlistId: rec._id }),
+    ).not.toBeNull();
+
+    await t.mutation(internal.waitlist.markConfirmationEmailSent, {
+      waitlistId: rec._id,
+      attempt: 2,
+      sent: true,
+    });
+    expect(
+      await t.query(internal.waitlist.getPaymentEmailRecipient, { waitlistId: rec._id }),
+    ).toBeNull();
+    expect((await recordByEmail(t, PAYER)).confirmationEmailAttempts).toBe(2);
   });
 });

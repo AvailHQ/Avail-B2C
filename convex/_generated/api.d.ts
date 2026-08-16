@@ -11,6 +11,7 @@
 import type * as email from "../email.js";
 import type * as emailValidation from "../emailValidation.js";
 import type * as http from "../http.js";
+import type * as paymentEmail from "../paymentEmail.js";
 import type * as redemptionCode from "../redemptionCode.js";
 import type * as stripeSecurity from "../stripeSecurity.js";
 import type * as stripeSignature from "../stripeSignature.js";
@@ -26,6 +27,7 @@ declare const fullApi: ApiFromModules<{
   email: typeof email;
   emailValidation: typeof emailValidation;
   http: typeof http;
+  paymentEmail: typeof paymentEmail;
   redemptionCode: typeof redemptionCode;
   stripeSecurity: typeof stripeSecurity;
   stripeSignature: typeof stripeSignature;

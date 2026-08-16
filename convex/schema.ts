@@ -59,6 +59,8 @@ export default defineSchema({
 
     // --- Email lifecycle ---
     confirmationEmailSentAt: v.optional(v.number()),
+    confirmationEmailAttempts: v.optional(v.number()),
+    confirmationEmailLastAttemptAt: v.optional(v.number()),
 
     // --- Early access redemption ---
     // Issued once payment is confirmed. Each code is fully random with no shared

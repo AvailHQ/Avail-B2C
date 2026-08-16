@@ -1,7 +1,6 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { sendEmail, paymentConfirmationEmail } from "./email";
 import { generateRedemptionCodeCandidates } from "./redemptionCode";
 import { loadStripePaymentPolicy, validateCheckoutSession } from "./stripeSecurity";
 import { verifyStripeSignature } from "./stripeSignature";
@@ -49,7 +48,7 @@ const stripeWebhook = httpAction(async (ctx, request) => {
         }
         return new Response(null, { status: 200 });
       }
-      const result = await ctx.runMutation(internal.waitlist.markPaid, {
+      await ctx.runMutation(internal.waitlist.markPaid, {
         eventId: event.id,
         stripeSessionId: session.id,
         email: session.customer_details?.email ?? session.customer_email ?? undefined,
@@ -63,17 +62,6 @@ const stripeWebhook = httpAction(async (ctx, request) => {
         redemptionCodeCandidates: generateRedemptionCodeCandidates(),
       });
 
-      // Send the confirmation email once, on the first time this becomes paid.
-      if (result?.newlyPaid && result.email) {
-        const firstName = String(result.name || "").split(" ")[0] || "there";
-        const { subject, html } = paymentConfirmationEmail(firstName);
-        const sent = await sendEmail({ to: result.email, subject, html });
-        if (sent) {
-          await ctx.runMutation(internal.waitlist.markConfirmationEmailSent, {
-            email: result.email,
-          });
-        }
-      }
       break;
     }
 

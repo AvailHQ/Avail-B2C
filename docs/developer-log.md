@@ -331,3 +331,59 @@ the two states differ in height, the icon/heading visibly jumped. Fix:
 
 Payment recording is unaffected — this is presentation only. `tsc -b` passes.
 Change is local until committed + pushed (Vercel redeploy to reach production).
+
+---
+
+## 2026-08-16 — Resend email + refund-path verification (sandbox)
+
+- **Author:** Claude Opus 4.8 (`claude-opus-4-8`), via Claude Code
+- **Branch:** `main`
+- **Scope:** Configure transactional email and verify the two remaining
+  operational paths end-to-end: confirmation emails and refunds.
+
+### Resend configured
+
+Set on the Convex deployment (`basic-otter-332`):
+
+| Var | Value |
+| --- | --- |
+| `RESEND_API_KEY` | `re_…` (created in Resend) |
+| `EMAIL_FROM` | `Avail <onboarding@resend.dev>` |
+
+Note: with the shared `onboarding@resend.dev` sender and no verified domain,
+Resend only delivers to the account owner's own email. So the email test used
+`miaoyulun380@gmail.com` as the checkout email. Production needs a verified
+domain (see `docs/production-cutover.md`).
+
+### Email test — verified
+
+Full flow on `myavail.vercel.app` with `miaoyulun380@gmail.com`: signup →
+`email_only` (welcome email path), Stripe £10 → webhook → `paid`. The success
+page showed "You're in, Yulun.", code `MNCZDSKKQXMSZCP6`, and — critically —
+"We've sent a confirmation to miaoyulun380@gmail.com". That copy is gated on
+`confirmationEmailSent`, and the backend confirmed `confirmationEmailSent: true`,
+proving the confirmation email actually sent (Resend accepted) and
+`markConfirmationEmailSent` ran. This also re-confirmed the redirect fix:
+`session_id` now arrives and the page personalizes.
+
+### Refund test — verified
+
+Even though the product is marketed "Non-refundable", the `charge.refunded`
+handler is a defensive path for chargebacks/disputes and manual refunds (a bank
+can force a refund regardless of policy). Tested by refunding the £10
+PaymentIntent (`pi_3U57kJC…`) in the Stripe sandbox dashboard:
+
+- Stripe status → Refunded; `charge.refunded` webhook fired.
+- `markRefunded` matched by `stripePaymentIntentId` and set the record to
+  `status: "refunded"` (confirmed via both `getBySessionId` and `checkPosition`).
+- `getBySessionId` no longer returns the redemption code once refunded (it is
+  only returned while `paid`), so a refunded customer loses code exposure and,
+  revisiting the success URL, lands on the unverified state rather than the code.
+
+### Status
+
+- Done: sandbox E2E, Gate 1 hardening, Vercel wiring, redirect, success page
+  (personalization + jump polish), Resend email, refund path.
+- Remaining: Gate 2 idempotency tests (`docs/stripe-security-testing.md`).
+- Uncommitted at time of writing: `src/pages/SuccessPage.tsx` (jump polish),
+  `docs/production-cutover.md`, `docs/developer-log.md`.

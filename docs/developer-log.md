@@ -471,3 +471,66 @@ policy, public-data-boundary tests, browser/abuse gates) remain.
   `git diff --check` pass.
 - `npx convex codegen --typecheck enable` passed and uploaded the updated
   functions to the configured Convex development deployment.
+
+---
+
+## 2026-08-16 — Gate 3: refund policy + public data boundaries
+
+- **Author:** Claude Opus 4.8 (`claude-opus-4-8`), via Claude Code
+- **Branch:** `main`
+- **Scope:** Close Gate 3 of `docs/stripe-security-testing.md` — partial-refund
+  policy (REF-03) and public data boundaries (DATA-01–07).
+
+### Finding fixed — business stats were publicly readable
+
+`getStats` was a public `query`, so anyone could call it from a browser and read
+`totalSignups` and `amountReserved` (total revenue). It is now an
+`internalQuery`. Verified nothing referenced it (no frontend usage), so this
+breaks nothing; expose it behind an authenticated admin surface if ever needed.
+
+### Business decision recorded — partial refunds
+
+**Any refund revokes the reservation, partial included.** The webhook now passes
+`amount_refunded` / `amount` through, records `amountRefunded` on the record for
+visibility, and logs a warning when the refund is partial (unusual for a fixed
+£10 product) — but the status transition is the same as a full refund.
+
+### Changes
+
+- `convex/schema.ts`: optional `waitlist.amountRefunded`.
+- `convex/http.ts`: pass `amountRefunded` and `chargeAmount` from the charge.
+- `convex/waitlist.ts`: `markRefunded` records the refunded amount, flags/logs
+  partial refunds, and returns `partialRefund`; `getStats` → `internalQuery`.
+
+### Follow-up fix — stale cumulative refund total (found in review)
+
+The first version of `markRefunded` returned early for an already-`refunded`
+reservation, so `amountRefunded` was never advanced. Stripe's
+`charge.amount_refunded` is **cumulative per charge**, so refunding £3 and then
+the remaining £7 left the record claiming only 300 refunded while the customer
+had been refunded in full — actively misleading for the reconciliation this
+field exists for. The already-refunded branch now advances `amountRefunded`
+(taking the maximum, so an out-of-order delivery cannot walk it backwards) while
+still leaving `refundedAt` untouched per REF-02.
+
+### Verification
+
+- New `tests/convex/publicDataBoundary.test.ts` (12 tests): DATA-01–07 with
+  exact-allowlist assertions (`checkPosition` returns only `{found, status}`;
+  `getBySessionId` exposes only display fields and reveals the code only while
+  `paid`), REF-03 partial/full refund policy, and regression coverage for
+  consecutive partial refunds (total advances to 1000, `refundedAt` unchanged)
+  and a stale out-of-order refund event (total cannot decrease).
+- Note on method: asserting visibility by calling through the `api` handle does
+  **not** work — convex-test resolves functions by path, and a call with empty
+  args throws on arg validation, which is a false positive. The tests assert the
+  registered function's `isInternal` metadata instead.
+- Full suite 43 passed (19 unit + 24 convex); `oxlint`, `tsc -b` + `vite build`,
+  `convex codegen --typecheck`, and `git diff --check` all clean. Live webhook
+  still returns 400 to an unsigned probe.
+
+### Remaining
+
+Gate 4 (success-page Playwright UI-01–07; signup abuse/rate-limit ABUSE-01–06)
+and Gate 5 (manual Stripe sandbox acceptance matrix: 3DS, declines, abandoned
+checkout, duplicate payments, partial refund).

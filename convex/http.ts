@@ -71,6 +71,9 @@ const stripeWebhook = httpAction(async (ctx, request) => {
         eventId: event.id,
         stripePaymentIntentId:
           typeof charge.payment_intent === "string" ? charge.payment_intent : undefined,
+        amountRefunded:
+          typeof charge.amount_refunded === "number" ? charge.amount_refunded : undefined,
+        chargeAmount: typeof charge.amount === "number" ? charge.amount : undefined,
       });
       break;
     }

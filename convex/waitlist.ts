@@ -337,6 +337,8 @@ export const markRefunded = internalMutation({
     eventId: v.string(),
     stripePaymentIntentId: v.optional(v.string()),
     stripeSessionId: v.optional(v.string()),
+    amountRefunded: v.optional(v.number()),
+    chargeAmount: v.optional(v.number()),
   },
   handler: async (ctx: any, args: any) => {
     let user = null;
@@ -374,16 +376,38 @@ export const markRefunded = internalMutation({
     }
 
     // A distinct second refund event for the same reservation must not overwrite
-    // the original refund timestamp.
+    // the original refund timestamp. The refunded total still has to advance
+    // though: Stripe's `amount_refunded` is cumulative per charge, so a second
+    // partial refund would otherwise leave a stale (too low) figure on record.
+    // Take the maximum so out-of-order deliveries cannot walk it backwards.
     if (user.status === "refunded") {
+      const knownRefunded = user.amountRefunded ?? 0;
+      if (typeof args.amountRefunded === "number" && args.amountRefunded > knownRefunded) {
+        await ctx.db.patch(user._id, { amountRefunded: args.amountRefunded });
+      }
       return { success: true, alreadyRefunded: true };
+    }
+
+    // Policy (REF-03): any refund revokes the reservation, partial included.
+    // A partial refund is unusual here (fixed GBP 10 product), so log it — the
+    // amount is recorded either way for follow-up.
+    const isPartial =
+      typeof args.amountRefunded === "number" &&
+      typeof args.chargeAmount === "number" &&
+      args.amountRefunded > 0 &&
+      args.amountRefunded < args.chargeAmount;
+    if (isPartial) {
+      console.warn(
+        `Partial refund revokes reservation ${user._id}: ${args.amountRefunded}/${args.chargeAmount}`,
+      );
     }
 
     await ctx.db.patch(user._id, {
       status: "refunded",
       refundedAt: Date.now(),
+      amountRefunded: args.amountRefunded,
     });
-    return { success: true };
+    return { success: true, partialRefund: isPartial };
   },
 });
 
@@ -485,8 +509,12 @@ export const getBySessionId = query({
 /**
  * Reservation funnel stats: total signups plus a breakdown by status and
  * total amount reserved (in minor units, e.g. pence).
+ *
+ * Internal (DATA-06): signup counts and revenue are business data, so this must
+ * not be callable from the browser. Expose it through an authenticated admin
+ * surface if it is ever needed in the product.
  */
-export const getStats = query({
+export const getStats = internalQuery({
   args: {},
   handler: async (ctx: any) => {
     const all = await ctx.db.query("waitlist").collect();

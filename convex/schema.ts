@@ -39,6 +39,10 @@ export default defineSchema({
     currency: v.optional(v.string()), // e.g. "gbp"
     paidAt: v.optional(v.number()),
     refundedAt: v.optional(v.number()),
+    // Total refunded so far, in minor units. Policy is that any refund revokes
+    // the reservation, so this is recorded for visibility (e.g. spotting a
+    // partial refund) rather than to decide the status.
+    amountRefunded: v.optional(v.number()),
 
     // Extra PaymentIntents seen for an already-paid reservation. Policy is one
     // reservation per email, so a genuine second payment is recorded here (not

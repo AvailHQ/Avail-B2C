@@ -116,7 +116,7 @@ export function EarlyAccessSection({
                   onChange={(event) => onConsentChange(event.target.checked)}
                   className="mt-0.5 size-4 shrink-0 accent-[#4FA3C7]"
                 />
-                <span className="type-caption text-[#64707D]">
+                <span className="type-caption text-[#556166]">
                   Email me occasional Avail updates about early access and launch. Optional - unsubscribe anytime.
                 </span>
               </label>

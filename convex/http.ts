@@ -2,75 +2,9 @@ import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { sendEmail, paymentConfirmationEmail } from "./email";
-
-/**
- * Convert an ArrayBuffer to a lowercase hex string.
- */
-function bufferToHex(buffer: ArrayBuffer): string {
-  return Array.from(new Uint8Array(buffer))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-/**
- * Constant-time comparison of two equal-length hex strings.
- */
-function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let mismatch = 0;
-  for (let i = 0; i < a.length; i++) {
-    mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return mismatch === 0;
-}
-
-/**
- * Verify a Stripe webhook signature without the Stripe SDK, using Web Crypto.
- *
- * Reproduces Stripe's scheme: signed_payload = `${timestamp}.${rawBody}`, signed
- * with HMAC-SHA256 using the endpoint's signing secret, compared against the
- * `v1` signatures in the `Stripe-Signature` header. A 5 minute timestamp
- * tolerance guards against replay.
- */
-async function verifyStripeSignature(
-  payload: string,
-  signatureHeader: string | null,
-  secret: string,
-): Promise<boolean> {
-  if (!signatureHeader) return false;
-
-  let timestamp = "";
-  const v1Signatures: string[] = [];
-  for (const part of signatureHeader.split(",")) {
-    const [key, value] = part.split("=");
-    if (key?.trim() === "t") timestamp = value?.trim() ?? "";
-    if (key?.trim() === "v1" && value) v1Signatures.push(value.trim());
-  }
-
-  if (!timestamp || v1Signatures.length === 0) return false;
-
-  const timestampSeconds = Number.parseInt(timestamp, 10);
-  if (!Number.isFinite(timestampSeconds)) return false;
-  const nowSeconds = Math.floor(Date.now() / 1000);
-  if (Math.abs(nowSeconds - timestampSeconds) > 60 * 5) return false;
-
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const signatureBuffer = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    encoder.encode(`${timestamp}.${payload}`),
-  );
-  const expected = bufferToHex(signatureBuffer);
-
-  return v1Signatures.some((sig) => timingSafeEqual(sig, expected));
-}
+import { generateRedemptionCodeCandidates } from "./redemptionCode";
+import { loadStripePaymentPolicy, validateCheckoutSession } from "./stripeSecurity";
+import { verifyStripeSignature } from "./stripeSignature";
 
 const stripeWebhook = httpAction(async (ctx, request) => {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -98,9 +32,22 @@ const stripeWebhook = httpAction(async (ctx, request) => {
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data?.object ?? {};
-      // Only act on paid sessions (payment could still be processing/unpaid).
-      if (session.payment_status && session.payment_status !== "paid") {
-        break;
+      let policy;
+      try {
+        policy = loadStripePaymentPolicy(process.env);
+      } catch (error) {
+        console.error(error instanceof Error ? error.message : "Stripe payment policy is invalid");
+        return new Response("Webhook not configured", { status: 500 });
+      }
+      const eligibility = validateCheckoutSession(session, policy);
+      if (!eligibility.ok) {
+        console.warn(`Rejected Checkout Session: ${eligibility.reason}`);
+        // A malformed event cannot be processed. Valid but ineligible sessions
+        // are acknowledged so Stripe does not retry an unrelated purchase.
+        if (eligibility.reason === "missing_session_id") {
+          return new Response("Invalid Checkout Session", { status: 400 });
+        }
+        return new Response(null, { status: 200 });
       }
       const result = await ctx.runMutation(internal.waitlist.markPaid, {
         stripeSessionId: session.id,
@@ -112,6 +59,7 @@ const stripeWebhook = httpAction(async (ctx, request) => {
           typeof session.customer === "string" ? session.customer : undefined,
         amountPaid: typeof session.amount_total === "number" ? session.amount_total : undefined,
         currency: session.currency ?? undefined,
+        redemptionCodeCandidates: generateRedemptionCodeCandidates(),
       });
 
       // Send the confirmation email once, on the first time this becomes paid.

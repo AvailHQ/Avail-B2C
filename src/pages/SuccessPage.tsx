@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, Loader2 } from 'lucide-react';
+import { CircleAlert, CheckCircle2, Loader2 } from 'lucide-react';
 import { Header } from '../components/landing/Header';
 import { Footer } from '../components/landing/Footer';
 import { pageShell, primaryButtonClass } from '../components/landing/shared';
@@ -13,8 +13,14 @@ const MAX_ATTEMPTS = 10;
 type LookupState =
   | { phase: 'idle' }
   | { phase: 'confirming' }
-  | { phase: 'paid'; email?: string; name?: string; redemptionCode?: string }
-  | { phase: 'fallback' };
+  | {
+      phase: 'paid';
+      email?: string;
+      name?: string;
+      redemptionCode?: string;
+      confirmationEmailSent: boolean;
+    }
+  | { phase: 'unverified' };
 
 export function SuccessPage() {
   const [state, setState] = useState<LookupState>({ phase: 'idle' });
@@ -22,10 +28,10 @@ export function SuccessPage() {
   useEffect(() => {
     const sessionId = new URLSearchParams(window.location.search).get('session_id');
 
-    // No session id (or Convex not configured): show the generic confirmation.
-    // The payment is recorded by the webhook regardless of this page.
+    // Without a session id we cannot verify payment from this page. Payment
+    // processing remains webhook-driven and never depends on this page.
     if (!sessionId) {
-      setState({ phase: 'fallback' });
+      setState({ phase: 'unverified' });
       return;
     }
 
@@ -45,7 +51,7 @@ export function SuccessPage() {
 
       if (result === null) {
         // Convex not configured on this build.
-        setState({ phase: 'fallback' });
+        setState({ phase: 'unverified' });
         return;
       }
 
@@ -55,12 +61,13 @@ export function SuccessPage() {
           email: result.email,
           name: result.name,
           redemptionCode: result.redemptionCode,
+          confirmationEmailSent: result.confirmationEmailSent === true,
         });
         return;
       }
 
       if (attempts >= MAX_ATTEMPTS) {
-        setState({ phase: 'fallback' });
+        setState({ phase: 'unverified' });
         return;
       }
 
@@ -96,7 +103,7 @@ export function SuccessPage() {
                 only takes a moment.
               </p>
             </>
-          ) : (
+          ) : state.phase === 'paid' ? (
             <>
               <div className="flex size-[76px] items-center justify-center rounded-full bg-linear-to-br from-[#6FBF9E]/15 to-[#4FA3C7]/15 text-[#6FBF9E]">
                 <CheckCircle2 size={44} />
@@ -111,7 +118,7 @@ export function SuccessPage() {
                 Avail and a founding place at the front of the queue.
               </p>
 
-              {state.phase === 'paid' && state.redemptionCode && (
+              {state.redemptionCode && (
                 <div className="w-full rounded-2xl border border-[#17333A]/12 bg-white/70 px-6 py-5">
                   <p className="type-caption font-extrabold tracking-[0.6px] text-[#64707D] uppercase">
                     Your early access code
@@ -127,7 +134,7 @@ export function SuccessPage() {
               )}
 
               <p className="type-body text-[#64707D]">
-                {state.phase === 'paid' && state.email ? (
+                {state.confirmationEmailSent && state.email ? (
                   <>
                     We&rsquo;ve sent a confirmation to{' '}
                     <strong className="font-bold text-[#17333A]">{state.email}</strong>. When
@@ -136,11 +143,35 @@ export function SuccessPage() {
                   </>
                 ) : (
                   <>
-                    We&rsquo;ve sent a confirmation to your email. When the app launches,
-                    we&rsquo;ll send everything you need to activate your access. Nothing else
-                    to do for now.
+                    We&rsquo;ll email you when your confirmation is ready. When the app
+                    launches, we&rsquo;ll send everything you need to activate your access.
                   </>
                 )}
+              </p>
+
+              <a href="/" className={primaryButtonClass}>
+                Back to Avail
+              </a>
+            </>
+          ) : (
+            <>
+              <div className="flex size-[76px] items-center justify-center rounded-full bg-linear-to-br from-[#6FBF9E]/15 to-[#4FA3C7]/15 text-[#4FA3C7]">
+                <CircleAlert size={44} />
+              </div>
+
+              <h1 className="type-page-title font-black text-[#17333A]">
+                Thanks &mdash; we&rsquo;re checking your reservation.
+              </h1>
+
+              <p className="type-lead text-[#4F5B60]">
+                We couldn&rsquo;t verify the payment from this page. If you completed checkout,
+                your payment is still recorded securely by Stripe and we&rsquo;ll email you once
+                it has been confirmed.
+              </p>
+
+              <p className="type-body text-[#64707D]">
+                Please keep your Stripe receipt. If you don&rsquo;t receive confirmation, contact
+                us and we&rsquo;ll check it for you.
               </p>
 
               <a href="/" className={primaryButtonClass}>

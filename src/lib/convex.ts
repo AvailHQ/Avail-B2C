@@ -42,6 +42,7 @@ export interface ReservationLookup {
   name?: string;
   email?: string;
   redemptionCode?: string;
+  confirmationEmailSent?: boolean;
 }
 
 /**

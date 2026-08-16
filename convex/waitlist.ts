@@ -3,26 +3,16 @@ import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { validateEmail } from "./emailValidation";
 import { sendEmail, welcomeEmail } from "./email";
-
-// Unambiguous alphabet (no 0/O/1/I) so codes are easy to read out if ever needed.
-const REDEMPTION_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-const REDEMPTION_CODE_LENGTH = 16;
+import { isValidRedemptionCode } from "./redemptionCode";
 
 /**
- * Generate a fully random redemption code with no shared prefix or structure,
- * checking the index so it is unique across all issued codes.
- *
- * Note: this uses Math.random(), which is not cryptographically strong. For a
- * value-bearing code at larger scale, generate it with crypto in the webhook
- * HTTP action and pass it in instead.
+ * Select the first secure candidate not already present in the database. The
+ * candidates are generated with Web Crypto by the webhook HTTP action because
+ * Convex mutations must remain deterministic.
  */
-async function generateUniqueRedemptionCode(ctx: any): Promise<string> {
-  for (let attempt = 0; attempt < 10; attempt++) {
-    let code = "";
-    for (let i = 0; i < REDEMPTION_CODE_LENGTH; i++) {
-      code += REDEMPTION_ALPHABET[Math.floor(Math.random() * REDEMPTION_ALPHABET.length)];
-    }
-
+async function selectUniqueRedemptionCode(ctx: any, candidates: string[]): Promise<string> {
+  for (const code of candidates) {
+    if (!isValidRedemptionCode(code)) continue;
     const dup = await ctx.db
       .query("waitlist")
       .withIndex("by_redemptionCode", (q: any) => q.eq("redemptionCode", code))
@@ -33,7 +23,7 @@ async function generateUniqueRedemptionCode(ctx: any): Promise<string> {
     }
   }
 
-  throw new Error("Could not generate a unique redemption code after 10 attempts");
+  throw new Error("No valid unique redemption code candidate was provided");
 }
 
 /**
@@ -188,6 +178,7 @@ export const markPaid = internalMutation({
     stripeCustomerId: v.optional(v.string()),
     amountPaid: v.optional(v.number()),
     currency: v.optional(v.string()),
+    redemptionCodeCandidates: v.array(v.string()),
   },
   handler: async (ctx: any, args: any) => {
     const email = args.email ? args.email.trim().toLowerCase() : undefined;
@@ -223,7 +214,10 @@ export const markPaid = internalMutation({
       if (!email) {
         return { success: false, reason: "no_match_no_email" };
       }
-      const redemptionCode = await generateUniqueRedemptionCode(ctx);
+      const redemptionCode = await selectUniqueRedemptionCode(
+        ctx,
+        args.redemptionCodeCandidates,
+      );
       const name = args.name?.trim() || email.split("@")[0];
       await ctx.db.insert("waitlist", {
         name,
@@ -243,7 +237,9 @@ export const markPaid = internalMutation({
     }
 
     // Issue the early access redemption code now that payment is confirmed.
-    const redemptionCode = user.redemptionCode ?? (await generateUniqueRedemptionCode(ctx));
+    const redemptionCode =
+      user.redemptionCode ??
+      (await selectUniqueRedemptionCode(ctx, args.redemptionCodeCandidates));
 
     await ctx.db.patch(user._id, {
       ...paymentFields,
@@ -348,7 +344,11 @@ export const checkPosition = query({
 
     return {
       found: true,
-      user,
+      // This is a public query, so return only the minimum non-sensitive
+      // information needed for a status check. Never expose the underlying
+      // record, which contains Stripe identifiers, attribution data and a
+      // redemption code.
+      status: user.status,
     };
   },
 });
@@ -385,6 +385,8 @@ export const getBySessionId = query({
       name: user.name,
       email: user.email,
       redemptionCode: user.status === "paid" ? user.redemptionCode : undefined,
+      confirmationEmailSent:
+        user.status === "paid" && user.confirmationEmailSentAt !== undefined,
     };
   },
 });

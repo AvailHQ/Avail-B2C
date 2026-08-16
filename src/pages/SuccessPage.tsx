@@ -88,10 +88,10 @@ export function SuccessPage() {
     <div className="relative flex min-h-screen flex-col bg-[#F7FAF8] text-[#1B1F23]">
       <Header />
 
-      <main className={`${pageShell} flex flex-1 items-center justify-center py-20`}>
-        <div className="mx-auto flex max-w-[560px] flex-col items-center gap-6 text-center">
+      <main className={`${pageShell} flex flex-1 items-start justify-center py-20`}>
+        <div className="mx-auto flex w-full max-w-[560px] flex-col items-center text-center">
           {state.phase === 'confirming' || state.phase === 'idle' ? (
-            <>
+            <div key="confirming" className="fade-up flex w-full flex-col items-center gap-6">
               <div className="flex size-[76px] items-center justify-center rounded-full bg-linear-to-br from-[#6FBF9E]/15 to-[#4FA3C7]/15 text-[#4FA3C7]">
                 <Loader2 size={44} className="animate-spin" />
               </div>
@@ -102,9 +102,9 @@ export function SuccessPage() {
                 Your payment went through &mdash; we&rsquo;re just finishing up. This
                 only takes a moment.
               </p>
-            </>
+            </div>
           ) : state.phase === 'paid' ? (
-            <>
+            <div key="paid" className="fade-up flex w-full flex-col items-center gap-6">
               <div className="flex size-[76px] items-center justify-center rounded-full bg-linear-to-br from-[#6FBF9E]/15 to-[#4FA3C7]/15 text-[#6FBF9E]">
                 <CheckCircle2 size={44} />
               </div>
@@ -152,9 +152,9 @@ export function SuccessPage() {
               <a href="/" className={primaryButtonClass}>
                 Back to Avail
               </a>
-            </>
+            </div>
           ) : (
-            <>
+            <div key="unverified" className="fade-up flex w-full flex-col items-center gap-6">
               <div className="flex size-[76px] items-center justify-center rounded-full bg-linear-to-br from-[#6FBF9E]/15 to-[#4FA3C7]/15 text-[#4FA3C7]">
                 <CircleAlert size={44} />
               </div>
@@ -177,7 +177,7 @@ export function SuccessPage() {
               <a href="/" className={primaryButtonClass}>
                 Back to Avail
               </a>
-            </>
+            </div>
           )}
         </div>
       </main>

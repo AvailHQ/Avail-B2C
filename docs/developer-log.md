@@ -232,3 +232,102 @@ green end-to-end result no longer held.
 - Still outstanding (unchanged): Payment Link *After payment* redirect to
   `<site>/success?session_id={CHECKOUT_SESSION_ID}`, Resend email config
   (`RESEND_API_KEY` / `EMAIL_FROM`), and the `charge.refunded` path.
+
+---
+
+## 2026-08-16 — A11y fix, Vercel SPA routing, deployed-site diagnosis, cutover doc
+
+- **Author:** Claude Opus 4.8 (`claude-opus-4-8`), via Claude Code
+- **Branch:** `main`
+- **Scope:** Clear the last pre-commit gate, fix production routing, diagnose why
+  the deployed success page can't verify payments, and document the prod cutover.
+
+### Done
+
+- **Accessibility (last failing gate → 10/10):** the marketing-consent copy in
+  `EarlyAccessSection.tsx` was `#64707D` on the tinted form background (4.38:1,
+  below WCAG AA 4.5:1). Changed to `#556166` (~5.56:1), an existing palette
+  colour already used in the same component. `npm run test:a11y` now 10/10.
+- **Vercel SPA routing:** added `vercel.json` with a catch-all rewrite to
+  `/index.html`. The app is client-routed, so on Vercel `/success`, `/privacy`,
+  and `/terms` were returning hard 404s — which would have broken the Stripe
+  post-payment redirect entirely. After deploy, all three return 200.
+
+### Diagnosis — deployed site is disconnected from Convex
+
+Probing the live success page with a known-paid `session_id` showed the
+"we're checking your reservation" fallback, not the personalized page.
+Inspecting the deployed bundle (`/assets/index-*.js`) found **no** `*.convex.cloud`
+URL, i.e. **`VITE_CONVEX_URL` is not set in Vercel**. Consequence: on the live
+site `client` is null, so signups are never written to Convex and the success
+page can never verify a payment. Fix (pending, user action in Vercel):
+
+| Vercel env (Production) | Value |
+| --- | --- |
+| `VITE_CONVEX_URL` | `https://basic-otter-332.eu-west-1.convex.cloud` (for sandbox testing) |
+| `VITE_STRIPE_PAYMENT_LINK` | `https://buy.stripe.com/test_bJe5kCbv08qa6RA3Ni6Na00` |
+
+Then redeploy (Vite injects env at build time).
+
+### Added
+
+- `docs/production-cutover.md` — checklist to move from the dev deployment
+  (`basic-otter-332`) + Stripe sandbox to a dedicated prod Convex deployment +
+  Stripe live mode, capturing the fail-closed webhook, per-endpoint signing
+  secrets, the Vercel `VITE_CONVEX_URL` requirement, and the SPA rewrite.
+
+### Deploy state
+
+- `main` is pushed; Vercel redeployed with `vercel.json` (SPA routes now 200).
+- Deployed flow still blocked until `VITE_CONVEX_URL` is set in Vercel.
+
+---
+
+## 2026-08-16 — Vercel env, production end-to-end test, redirect fix, jump polish
+
+- **Author:** Claude Opus 4.8 (`claude-opus-4-8`), via Claude Code
+- **Branch:** `main`
+- **Scope:** Connect the deployed site to Convex, run the full flow on the live
+  domain, fix the post-payment redirect, and smooth the success-page transition.
+
+### Vercel env configured (via the user's browser)
+
+Added on the `myavail` project (Production + Preview), then redeployed:
+
+| Name | Value |
+| --- | --- |
+| `VITE_CONVEX_URL` | `https://basic-otter-332.eu-west-1.convex.cloud` |
+| `VITE_STRIPE_PAYMENT_LINK` | `https://buy.stripe.com/test_bJe5kCbv08qa6RA3Ni6Na00` |
+
+After the redeploy the bundle contains the Convex URL and the live
+`/success?session_id=…` renders the personalized page (name + code).
+
+### Production end-to-end test (deployed site)
+
+Full flow on `myavail.vercel.app` with a fresh email (`availstripetest4@…`):
+signup form → Convex `email_only` (confirms the deployed form now writes to the
+backend), Stripe £10 with test card → webhook → record `paid`. All good.
+
+### Redirect fix
+
+The Payment Link *After payment* redirect was set to a plain
+`https://myavail.vercel.app/success`. Stripe did **not** auto-append the session
+id, so the redirect landed on `/success` with no `session_id` and the page showed
+the unverified fallback. Fix (done by the user in Stripe): set the redirect to
+`https://myavail.vercel.app/success?session_id={CHECKOUT_SESSION_ID}` — Stripe
+substitutes the placeholder, so the page can look the reservation up.
+(`docs/production-cutover.md` already documents the placeholder form.)
+
+### Success-page "jump" polish (`src/pages/SuccessPage.tsx`)
+
+On landing, the page briefly shows a "Confirming…" state, then swaps to the paid
+state once the lookup resolves. Because the content was vertically centered and
+the two states differ in height, the icon/heading visibly jumped. Fix:
+
+- Top-align the content (`items-start`) so the icon/heading keep a fixed
+  position across states; the taller paid content grows downward instead.
+- Wrap each state in the site's existing `fade-up` animation (keyed per phase)
+  so the swap fades in softly instead of hard-cutting.
+
+Payment recording is unaffected — this is presentation only. `tsc -b` passes.
+Change is local until committed + pushed (Vercel redeploy to reach production).

@@ -1,5 +1,5 @@
 import { convexTest } from "convex-test";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import schema from "../../convex/schema";
 import { internal } from "../../convex/_generated/api";
 import { generateRedemptionCodeCandidates } from "../../convex/redemptionCode";
@@ -264,6 +264,46 @@ describe("markRefunded — refund lifecycle", () => {
     // Safe to re-run.
     const second: any = await t.mutation(internal.migrations.backfillDuplicatePayments, {});
     expect(second.inserted).toBe(0);
+  });
+
+  it("backfill walks the whole table, not just the first batch", async () => {
+    // A capped single pass would silently skip duplicates on later rows once the
+    // table outgrows the batch size — and still report success.
+    const t = convexTest(schema, modules);
+    const total = 7;
+    await t.run(async (ctx: any) => {
+      for (let i = 0; i < total; i++) {
+        await ctx.db.insert("waitlist", {
+          name: `Legacy ${i}`,
+          email: `legacy${i}@example.com`,
+          status: "paid",
+          marketingConsent: false,
+          stripePaymentIntentId: `pi_primary_${i}`,
+          duplicatePaymentIntents: [`pi_legacy_${i}`],
+        });
+      }
+    });
+
+    const first: any = await t.mutation(internal.migrations.backfillDuplicatePayments, {
+      batchSize: 2,
+    });
+    expect(first.continued).toBe(true);
+
+    vi.useFakeTimers();
+    try {
+      await t.finishAllScheduledFunctions(vi.runAllTimers);
+    } finally {
+      vi.useRealTimers();
+    }
+
+    const indexed = await t.run(async (ctx: any) =>
+      (await ctx.db.query("duplicatePayments").collect()).map(
+        (row: any) => row.stripePaymentIntentId,
+      ),
+    );
+    expect(indexed.sort()).toEqual(
+      Array.from({ length: total }, (_, i) => `pi_legacy_${i}`).sort(),
+    );
   });
 
   it("REF-04: an early refund remains unclaimed so Stripe can retry it", async () => {

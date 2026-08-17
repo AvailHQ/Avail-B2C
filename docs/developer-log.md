@@ -719,6 +719,14 @@ indexes it, the refund then succeeds without revoking the reservation, and a
 re-run is a no-op. **Run this once against production before enabling live-mode
 refunds** (see `docs/production-cutover.md`).
 
+**Second follow-up (also from review): the backfill was capped at 1000 rows.** It
+used a single `take(1000)`, so once the reservation table outgrew that, later
+rows' duplicates would never be indexed — and the migration would still report
+success. It now walks the whole table in creation order, one batch per
+transaction, rescheduling itself while batches come back full (the same drain
+pattern as the rate-limit cleanup). A test seeds seven legacy-shaped rows, runs
+with `batchSize: 2`, and asserts every duplicate ends up indexed.
+
 ### Notes
 
 - Sandbox only; no live-mode resource was touched.
@@ -732,7 +740,7 @@ refunds** (see `docs/production-cutover.md`).
 
 ### Verification
 
-Vitest 64 passed; Playwright 26 passed in a single run (16 payment-UI, 10 a11y);
+Vitest 65 passed; Playwright 26 passed in a single run (16 payment-UI, 10 a11y);
 `oxlint`, `tsc -b` + `vite build`, `convex codegen --typecheck`, and
 `git diff --check` clean.
 

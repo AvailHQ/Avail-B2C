@@ -73,6 +73,20 @@ npx convex env set EMAIL_FROM              "Avail <hello@yourdomain>"     --prod
 Verify: `npx convex env list --prod` shows all five.
 (Sanity check: an unsigned POST to the prod webhook should return **400**, not 500.)
 
+## Step 3b — Backfill the duplicate-payment index
+
+Run once against production, after deploying functions and before any live
+refund:
+
+```sh
+npx convex run migrations:backfillDuplicatePayments '{}' --prod
+```
+
+Duplicate charges recorded before the `duplicatePayments` table existed live only
+in `waitlist.duplicatePaymentIntents`, which cannot be indexed. Refunding one of
+those would match no reservation, fail the webhook, and leave Stripe retrying for
+days. The migration is idempotent — a second run reports `inserted: 0`.
+
 ## Step 4 — Vercel (production env)
 
 Project → Settings → Environment Variables (scope: Production):

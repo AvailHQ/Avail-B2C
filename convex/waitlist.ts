@@ -316,6 +316,12 @@ export const markPaid = internalMutation({
           await ctx.db.patch(user._id, {
             duplicatePaymentIntents: [...dupes, args.stripePaymentIntentId],
           });
+          // Indexed so a later refund of this extra charge can be matched.
+          await ctx.db.insert("duplicatePayments", {
+            stripePaymentIntentId: args.stripePaymentIntentId,
+            waitlistId: user._id,
+            recordedAt: Date.now(),
+          });
           console.warn(
             `Duplicate payment for already-paid reservation ${user._id}: ${args.stripePaymentIntentId}`,
           );
@@ -393,6 +399,20 @@ export const markRefunded = internalMutation({
     }
 
     if (user === null) {
+      // Refund of a known duplicate charge. Policy is one reservation per email,
+      // so the operator is expected to refund these; the reservation itself was
+      // paid by a different PaymentIntent and must keep its entitlement.
+      const duplicate = await ctx.db
+        .query("duplicatePayments")
+        .withIndex("by_stripePaymentIntentId", (q: any) =>
+          q.eq("stripePaymentIntentId", args.stripePaymentIntentId),
+        )
+        .unique();
+      if (duplicate !== null) {
+        await claimStripeEvent(ctx, args.eventId, "charge.refunded");
+        return { success: true, duplicateRefund: true };
+      }
+
       // Do not claim the event: the payment write may be temporarily lagging
       // behind Stripe's refund event. Throwing makes the webhook return 500 so
       // Stripe retries once the matching reservation exists.

@@ -13,6 +13,7 @@ import type * as email from "../email.js";
 import type * as emailValidation from "../emailValidation.js";
 import type * as http from "../http.js";
 import type * as inputLimits from "../inputLimits.js";
+import type * as migrations from "../migrations.js";
 import type * as paymentEmail from "../paymentEmail.js";
 import type * as rateLimit from "../rateLimit.js";
 import type * as redemptionCode from "../redemptionCode.js";
@@ -32,6 +33,7 @@ declare const fullApi: ApiFromModules<{
   emailValidation: typeof emailValidation;
   http: typeof http;
   inputLimits: typeof inputLimits;
+  migrations: typeof migrations;
   paymentEmail: typeof paymentEmail;
   rateLimit: typeof rateLimit;
   redemptionCode: typeof redemptionCode;

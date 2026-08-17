@@ -208,6 +208,64 @@ describe("markRefunded — refund lifecycle", () => {
     expect(second.deduped).toBe(true);
   });
 
+  it("refunding a duplicate charge is acknowledged and keeps the reservation paid", async () => {
+    // The one-reservation-per-email policy tells the operator to refund the
+    // extra charge. That refund carries a PaymentIntent the reservation does not
+    // own, so without an index for it the webhook fails and Stripe retries
+    // forever — and the customer's valid reservation must survive either way.
+    const t = convexTest(schema, modules);
+    await t.mutation(internal.waitlist.markPaid, paidArgs());
+    await t.mutation(
+      internal.waitlist.markPaid,
+      paidArgs({ eventId: "evt_2", stripeSessionId: "cs_test_2", stripePaymentIntentId: "pi_2" }),
+    );
+
+    const res: any = await t.mutation(internal.waitlist.markRefunded, {
+      eventId: "evt_dup_refund",
+      stripePaymentIntentId: "pi_2",
+    });
+    const rec = await recordByEmail(t, PAYER);
+
+    expect(res.duplicateRefund).toBe(true);
+    expect(rec.status).toBe("paid"); // entitlement intact
+    expect(rec.refundedAt).toBeUndefined();
+  });
+
+  it("backfill indexes duplicates recorded before the index existed", async () => {
+    // Simulates a record written by the old markPaid: the extra charge is in
+    // duplicatePaymentIntents but has no index row, so its refund would throw.
+    const t = convexTest(schema, modules);
+    await t.mutation(internal.waitlist.markPaid, paidArgs());
+    await t.run(async (ctx: any) => {
+      const rec = await ctx.db
+        .query("waitlist")
+        .withIndex("by_email", (q: any) => q.eq("email", PAYER))
+        .unique();
+      await ctx.db.patch(rec._id, { duplicatePaymentIntents: ["pi_legacy"] });
+    });
+
+    await expect(
+      t.mutation(internal.waitlist.markRefunded, {
+        eventId: "evt_before",
+        stripePaymentIntentId: "pi_legacy",
+      }),
+    ).rejects.toThrow();
+
+    const first: any = await t.mutation(internal.migrations.backfillDuplicatePayments, {});
+    expect(first.inserted).toBe(1);
+
+    const res: any = await t.mutation(internal.waitlist.markRefunded, {
+      eventId: "evt_after",
+      stripePaymentIntentId: "pi_legacy",
+    });
+    expect(res.duplicateRefund).toBe(true);
+    expect((await recordByEmail(t, PAYER)).status).toBe("paid");
+
+    // Safe to re-run.
+    const second: any = await t.mutation(internal.migrations.backfillDuplicatePayments, {});
+    expect(second.inserted).toBe(0);
+  });
+
   it("REF-04: an early refund remains unclaimed so Stripe can retry it", async () => {
     const t = convexTest(schema, modules);
     await expect(

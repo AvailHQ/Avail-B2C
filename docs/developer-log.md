@@ -663,3 +663,83 @@ Verification on this review: Vitest **61/61**, Playwright **26/26** in one run,
 `npm run lint`, `npm run build`, and `git diff --check` all passed. The cleanup
 follow-up was subsequently verified with Vitest **62/62** passing, so Gate 4 is
 complete.
+
+---
+
+## 2026-08-16 — Gate 5: Stripe sandbox acceptance matrix
+
+- **Author:** Claude Opus 4.8 (`claude-opus-4-8`), via Claude Code
+- **Branch:** `main`
+- **Scope:** Run the seven-scenario manual acceptance matrix against the deployed
+  dev build and Stripe sandbox, and record it in
+  `tests/stripe-sandbox-checklist.md`.
+
+### Results — all seven pass
+
+3D Secure payment, declined card, abandoned checkout, duplicate payment on one
+email, partial refund, refund of the remainder, and the redirect / email-copy /
+mobile success page. Highlights:
+
+- **3DS** produced the challenge, the dashboard logged "3D Secure authentication
+  succeeded", and the reservation reached `paid` with one code and a correct
+  personalised redirect. The challenge iframe is cross-origin, so the repo owner
+  clicked *Complete* manually; every other step was automated.
+- **Declined and abandoned checkouts created no record at all** — no entitlement
+  leaks from an unpaid session.
+- **Duplicate payment** left one reservation row with a single code and appended
+  the second PaymentIntent to `duplicatePaymentIntents`, exactly as designed.
+- **Partial then remainder refund** confirmed the Gate 3 fix in production data:
+  `amountRefunded` advanced 300 → 1000 while `refundedAt` stayed at the first
+  refund. Both refunds revoked the reservation, per the "any refund revokes"
+  policy.
+
+### Defect found and fixed — refunding a duplicate charge broke the webhook
+
+The one-reservation-per-email policy tells the operator to refund the accidental
+second charge, but `markRefunded` matched only the reservation's *primary*
+PaymentIntent and Checkout Session. A refund of the duplicate matched nothing,
+threw, and returned 500 — so Stripe would have retried that delivery for days
+while the operator saw a permanently failing webhook, purely for following the
+documented procedure. Reproduced with a Convex test rather than by refunding in
+the sandbox, to avoid leaving a retrying failed delivery on the account.
+
+Fix: duplicates are now also recorded in an indexed `duplicatePayments` table;
+a refund matching one is acknowledged (200) **without** touching the reservation,
+so the customer keeps the entitlement bought with the first charge. Covered by a
+regression test.
+
+**Follow-up (found in review): the fix only covered new duplicates.** Charges
+already sitting in `waitlist.duplicatePaymentIntents` — written before the index
+existed — had no index row, so refunding one still threw. Added
+`convex/migrations.ts → backfillDuplicatePayments`, an idempotent internal
+mutation that inserts the missing index rows. Run against the dev deployment:
+`{ scanned: 1, inserted: 1 }`, and a second run returned `inserted: 0`. The test
+asserts the whole arc — a legacy-shaped duplicate throws on refund, backfill
+indexes it, the refund then succeeds without revoking the reservation, and a
+re-run is a no-op. **Run this once against production before enabling live-mode
+refunds** (see `docs/production-cutover.md`).
+
+### Notes
+
+- Sandbox only; no live-mode resource was touched.
+- Email delivery was only partly exercisable here: the shared
+  `onboarding@resend.dev` sender only delivers to the Resend account owner, so
+  the synthetic payers could not receive mail and the page correctly showed the
+  *undelivered* wording. Real delivery was verified in an earlier session.
+- Observation: the payer of a duplicate charge lands on the unverified state
+  (the duplicate's session id is deliberately not written to the reservation).
+  The copy is safe, but they see no code — acceptable under the current policy.
+
+### Verification
+
+Vitest 64 passed; Playwright 26 passed in a single run (16 payment-UI, 10 a11y);
+`oxlint`, `tsc -b` + `vite build`, `convex codegen --typecheck`, and
+`git diff --check` clean.
+
+### Status
+
+Gates 1–5 of `docs/stripe-security-testing.md` are complete. Remaining work
+before live mode is the production cutover itself, tracked in
+`docs/production-cutover.md` (separate prod Convex deployment, live-mode Payment
+Link and webhook with their own secrets, `STRIPE_EXPECTED_LIVEMODE=true`, a
+verified Resend sending domain, and Vercel env pointed at prod).

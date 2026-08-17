@@ -95,6 +95,19 @@ export default defineSchema({
   }).index("by_eventId", ["eventId"]),
 
   /**
+   * Extra PaymentIntents charged against an already-paid reservation, indexed so
+   * a refund of one can be matched. Policy is one reservation per email, so the
+   * operator is expected to refund these manually — without this index the
+   * refund event would match no reservation and the webhook would fail and be
+   * retried forever.
+   */
+  duplicatePayments: defineTable({
+    stripePaymentIntentId: v.string(),
+    waitlistId: v.id("waitlist"),
+    recordedAt: v.number(),
+  }).index("by_stripePaymentIntentId", ["stripePaymentIntentId"]),
+
+  /**
    * Fixed-window counters protecting expensive public actions (ABUSE-05).
    * `key` identifies the bucket (e.g. one email, or the global signup bucket);
    * the window resets once `windowStart` is older than the configured window.

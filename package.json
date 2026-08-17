@@ -9,6 +9,7 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run",
+    "update:disposable-domains": "node scripts/update-disposable-domains.mjs",
     "test:unit": "vitest run tests/unit",
     "test:convex": "vitest run tests/convex --passWithNoTests",
     "test:payment-ui": "playwright test tests/payment-success.spec.ts --pass-with-no-tests",

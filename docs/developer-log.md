@@ -841,3 +841,60 @@ verified Resend sending domain, and Vercel env pointed at prod).
 - `vitest tests/convex/signupAbuse.test.ts`: 14 passed.
 - `oxlint`: passed.
 - `tsc -b && vite build`: passed.
+
+---
+
+## 2026-08-17 — Replace the hand-written disposable-email blocklist
+
+- **Author:** Claude Opus 4.8 (`claude-opus-4-8`), via Claude Code
+- **Branch:** `main`
+- **Scope:** Signups accepted obviously fake addresses. Swap the ~30-domain
+  hand-maintained blocklist for the community list.
+
+### What was wrong
+
+`convex/emailValidation.ts` checked format, a hand-written set of ~30 disposable
+domains, and an MX/A lookup. The MX check only proves the *domain* can receive
+mail, so `mailinator.com`-style throwaways slipped through whenever they were
+not in that short list.
+
+### Change
+
+- `scripts/update-disposable-domains.mjs` regenerates
+  `convex/disposableDomains.ts` from
+  [disposable-email-domains](https://github.com/disposable-email-domains/disposable-email-domains)
+  (community-maintained since 2014). Run via
+  `npm run update:disposable-domains`. **8,261 domains**, up from ~30.
+- Generated at build time rather than fetched at runtime, so signup validation
+  stays offline and deterministic — a signup must never fail because GitHub is
+  unreachable.
+- The generator fails loudly if it parses fewer than 5,000 domains (an error
+  page would otherwise silently disable blocking) and strips real mailbox
+  providers (gmail/outlook/proton/…) from the result whatever upstream says.
+- Stored as one newline-delimited string, not an array literal: a third smaller
+  and it diffs one domain per line.
+- The frontend keeps its own small list (`src/lib/emailValidation.ts`) for
+  instant feedback. Deliberately not upgraded — the server is the authority, and
+  shipping 115 KB to every visitor to duplicate a server check is not worth it.
+  Confirmed: the browser bundle is unchanged at ~281 KB.
+
+### Known limitation (not closed by this change)
+
+A **fabricated mailbox at a real provider** — `asdfgh123456@gmail.com` — still
+passes. No blocklist can catch that, and no server-side check can confirm a
+mailbox exists without sending to it (SMTP `VRFY` is effectively dead and large
+providers accept-then-bounce). A test documents this gap explicitly. Closing it
+needs either bounce handling (Resend `email.bounced` → mark the record invalid;
+no UX friction, also protects sender reputation) or double opt-in (thorough, but
+adds friction inside the £10 conversion funnel). Bounce handling depends on a
+verified Resend sending domain, already tracked in `docs/production-cutover.md`.
+
+### Verification
+
+Rejected through the real deployed action:
+`submitEarlyAccess` with `…@mailinator.com` returned "Please use a permanent
+email address, not a temporary one." and wrote no record. New unit tests cover
+list size, known throwaways blocked, real providers never blocked,
+case/whitespace handling, malformed entries, and the documented gap.
+Vitest 73 passed; Playwright 26 passed in a single run; `oxlint`, build, and
+`git diff --check` clean.

@@ -3,44 +3,9 @@
 // it checks that the address is well-formed, is not a known disposable/temp
 // domain, and that the domain can actually receive mail.
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { DISPOSABLE_DOMAINS } from './disposableDomains';
 
-// Common disposable / throwaway email domains. Not exhaustive, but blocks the
-// providers people reach for when farming signups.
-const DISPOSABLE_DOMAINS = new Set([
-  '10minutemail.com',
-  '20minutemail.com',
-  'dispostable.com',
-  'fakeinbox.com',
-  'getairmail.com',
-  'getnada.com',
-  'guerrillamail.com',
-  'guerrillamail.info',
-  'grr.la',
-  'inboxbear.com',
-  'maildrop.cc',
-  'maildrop.io',
-  'mailinator.com',
-  'mintemail.com',
-  'moakt.com',
-  'mohmal.com',
-  'mytemp.email',
-  'sharklasers.com',
-  'spam4.me',
-  'temp-mail.org',
-  'tempmail.com',
-  'tempmail.dev',
-  'tempmailo.com',
-  'throwawaymail.com',
-  'trashmail.com',
-  'yopmail.com',
-  'yopmail.net',
-  'emailondeck.com',
-  'fakemail.net',
-  'discard.email',
-  'mailnesia.com',
-  'nada.email',
-]);
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function emailDomain(email: string): string {
   return email.trim().toLowerCase().split('@')[1] ?? '';

@@ -1,4 +1,4 @@
-import type { FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import {
   AlertTriangle,
   ArrowRight,
@@ -8,6 +8,7 @@ import {
   Users,
 } from 'lucide-react';
 import type { UserInfo } from '../../types';
+import { getPublicWaitlistCount } from '../../lib/convex';
 import { formInputClass, pageShell, primaryButtonClass } from './shared';
 
 interface EarlyAccessSectionProps {
@@ -51,6 +52,22 @@ export function EarlyAccessSection({
   onShowJoin,
   onRegisterAnother,
 }: EarlyAccessSectionProps) {
+  const [foundingAthletesCount, setFoundingAthletesCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void getPublicWaitlistCount()
+      .then((count) => {
+        if (!cancelled) setFoundingAthletesCount(count);
+      })
+      .catch(() => {
+        // Leave the value unavailable instead of inventing a client-side count.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [status]);
+
   return (
     <section id="early-access" className={`${pageShell} scroll-mt-24`}>
       <div className="fade-up mx-auto max-w-[960px]">
@@ -145,7 +162,7 @@ export function EarlyAccessSection({
                   <Users size={18} aria-hidden="true" />
                 </span>
                 <span>
-                  <strong className="font-black text-[#17333A]">347</strong> founding athletes have already joined
+                  <strong className="font-black text-[#17333A]">{foundingAthletesCount ?? '—'}</strong> founding athletes have already joined
                 </span>
               </p>
               <p className="type-body mt-1">Priority access. Two months of Avail included.</p>

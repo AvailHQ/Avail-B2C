@@ -12,6 +12,41 @@ import {
   emailSignupKey,
 } from "./rateLimit";
 
+const FOUNDING_ATHLETES_COUNTER_KEY = "foundingAthletes";
+const FOUNDING_ATHLETES_BASELINE = 347;
+
+async function getFoundingAthletesCount(ctx: any): Promise<number> {
+  const counter = await ctx.db
+    .query("publicCounters")
+    .withIndex("by_key", (q: any) => q.eq("key", FOUNDING_ATHLETES_COUNTER_KEY))
+    .unique();
+  return counter?.value ?? FOUNDING_ATHLETES_BASELINE;
+}
+
+async function incrementFoundingAthletesCount(ctx: any): Promise<number> {
+  const counter = await ctx.db
+    .query("publicCounters")
+    .withIndex("by_key", (q: any) => q.eq("key", FOUNDING_ATHLETES_COUNTER_KEY))
+    .unique();
+
+  const value = (counter?.value ?? FOUNDING_ATHLETES_BASELINE) + 1;
+  if (counter === null) {
+    await ctx.db.insert("publicCounters", {
+      key: FOUNDING_ATHLETES_COUNTER_KEY,
+      value,
+    });
+  } else {
+    await ctx.db.patch(counter._id, { value });
+  }
+  return value;
+}
+
+/** Public, read-only social-proof value. No waitlist records are exposed. */
+export const getPublicWaitlistCount = query({
+  args: {},
+  handler: async (ctx: any) => ({ count: await getFoundingAthletesCount(ctx) }),
+});
+
 /**
  * Select the first secure candidate not already present in the database. The
  * candidates are generated with Web Crypto by the webhook HTTP action because
@@ -150,6 +185,7 @@ export const join = internalMutation({
         success: true,
         alreadyJoined: true,
         user: existing,
+        publicWaitlistCount: await getFoundingAthletesCount(ctx),
       };
     }
 
@@ -168,11 +204,13 @@ export const join = internalMutation({
     });
 
     const newUser = await ctx.db.get(userId);
+    const publicWaitlistCount = await incrementFoundingAthletesCount(ctx);
 
     return {
       success: true,
       alreadyJoined: false,
       user: newUser,
+      publicWaitlistCount,
     };
   },
 });

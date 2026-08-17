@@ -751,3 +751,93 @@ before live mode is the production cutover itself, tracked in
 `docs/production-cutover.md` (separate prod Convex deployment, live-mode Payment
 Link and webhook with their own secrets, `STRIPE_EXPECTED_LIVEMODE=true`, a
 verified Resend sending domain, and Vercel env pointed at prod).
+
+---
+
+## 2026-08-17 — Production cutover configuration (pre-transaction)
+
+- **Author:** Codex (GPT-5), via Codex desktop, with dashboard steps completed
+  by the repository owner
+- **Branch:** `main`
+- **Scope:** Connect the deployed website to isolated Stripe Live and Convex
+  production resources, stopping before the first real-money transaction.
+
+### Production resources configured
+
+- Stripe Live Mode is available on the account.
+- Created a one-off **GBP £10** Live Payment Link for Avail early access. The
+  customer name is required, quantity adjustment is disabled, and the
+  after-payment redirect is
+  `https://myavail.vercel.app/success?session_id={CHECKOUT_SESSION_ID}`.
+- Created Convex production deployment `proper-buffalo-120` in `eu-west-1` and
+  deployed the committed Gate 5 functions.
+- Created a Stripe Live event destination for the production Convex HTTP route,
+  using Snapshot payloads and listening to `checkout.session.completed` and
+  `charge.refunded`.
+- Configured the production Convex Stripe signing secret, Live Payment Link
+  allowlist id, and `STRIPE_EXPECTED_LIVEMODE=true`. Secret values are not
+  recorded here.
+- Ran `migrations:backfillDuplicatePayments` against production. The new
+  database was empty: `{ continued: false, inserted: 0, scanned: 0 }`.
+- Configured Vercel Production to use the production Convex URL and Live Payment
+  Link, then rebuilt without the old build cache.
+
+### Read-only verification
+
+- An unsigned POST to the production webhook returned **HTTP 400 Invalid
+  signature**, confirming the route is deployed and the signing secret is set.
+- `/success`, `/privacy`, and `/terms` each return HTTP 200.
+- The deployed JavaScript bundle contains
+  `https://proper-buffalo-120.eu-west-1.convex.cloud` and the intended Live
+  Payment Link URL.
+
+### Deferred / not yet verified
+
+- **No real payment has been made yet.** The first £10 Live transaction,
+  successful webhook delivery, paid Convex record, redirect personalization,
+  redemption code, and Stripe customer receipt remain to be verified.
+- Resend production email is intentionally deferred because no owned sending
+  domain is available yet. Payment state and code issuance do not depend on
+  Resend; the success page will use its unsent-email wording. Stripe customer
+  receipts should be used as the temporary payment confirmation channel.
+- Do not publicly launch the Live Payment Link until the controlled first
+  transaction passes and the Webhook destination reports HTTP 200.
+
+---
+
+## 2026-08-17 — Server-owned founding-athlete counter
+
+- **Author:** Codex (GPT-5), via Codex desktop
+- **Scope:** Replace the landing page's hard-coded `347` social-proof value with
+  a production-backed counter.
+
+### Implemented
+
+- Added the indexed Convex `publicCounters` table and a narrowly scoped public
+  query that exposes only `{ count }`; it does not expose waitlist records.
+- The founding-athlete counter has a backend-only baseline of **347**. When no
+  counter row exists, the public query returns 347.
+- A genuinely new unique waitlist insert increments the counter in the same
+  Convex transaction. An existing email, including case/space variants and
+  concurrent repeats, returns the current value without incrementing it.
+- The landing page now reads this value from Convex. It does not contain the 347
+  baseline or derive/persist a count in browser state or local storage.
+- Added regression coverage for the empty baseline, concurrent duplicate joins,
+  normalized duplicate emails, and concurrent distinct joins.
+
+### Production status
+
+- Deployed the schema and functions to Convex production deployment
+  `proper-buffalo-120`; `publicCounters.by_key` was created successfully.
+- Direct production query verification returned `{ "count": 347 }`.
+- The frontend production build is ready but **not yet deployed**: the Vercel
+  CLI rejected its stored token as invalid. Re-authenticate Vercel (or publish
+  the source through the normal Git deployment) before treating the UI change
+  as live.
+
+### Verification
+
+- `convex codegen --typecheck enable`: passed.
+- `vitest tests/convex/signupAbuse.test.ts`: 14 passed.
+- `oxlint`: passed.
+- `tsc -b && vite build`: passed.

@@ -68,6 +68,12 @@ afterEach(() => {
 });
 
 describe("signup abuse controls", () => {
+  it("serves the founding-athlete baseline from the backend", async () => {
+    const t = convexTest(schema, modules);
+
+    expect(await t.query(api.waitlist.getPublicWaitlistCount, {})).toEqual({ count: 347 });
+  });
+
   it("ABUSE-01: concurrent submissions create one record and at most one welcome email", async () => {
     const calls = stubNetwork();
     const t = convexTest(schema, modules);
@@ -83,6 +89,7 @@ describe("signup abuse controls", () => {
 
     expect(await countWaitlist(t)).toBe(1);
     expect(calls.resend).toBe(1); // duplicates must not each send a welcome email
+    expect(await t.query(api.waitlist.getPublicWaitlistCount, {})).toEqual({ count: 348 });
   });
 
   it("ABUSE-02: case and space variants resolve to one identity", async () => {
@@ -100,6 +107,20 @@ describe("signup abuse controls", () => {
 
     expect(second.alreadyJoined).toBe(true);
     expect(await countWaitlist(t)).toBe(1);
+    expect(await t.query(api.waitlist.getPublicWaitlistCount, {})).toEqual({ count: 348 });
+  });
+
+  it("increments once for each distinct new waitlist member", async () => {
+    stubNetwork();
+    const t = convexTest(schema, modules);
+
+    await Promise.all([
+      t.action(api.waitlist.submitEarlyAccess, { name: "One", email: "one@example.com" }),
+      t.action(api.waitlist.submitEarlyAccess, { name: "Two", email: "two@example.com" }),
+    ]);
+
+    expect(await countWaitlist(t)).toBe(2);
+    expect(await t.query(api.waitlist.getPublicWaitlistCount, {})).toEqual({ count: 349 });
   });
 
   it("ABUSE-03: oversized input is rejected before any network work", async () => {

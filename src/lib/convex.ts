@@ -23,6 +23,14 @@ export interface JoinResult {
   success: boolean;
   error?: string;
   alreadyJoined?: boolean;
+  publicWaitlistCount?: number;
+}
+
+/** Read the server-owned social-proof count. The browser never derives it. */
+export async function getPublicWaitlistCount(): Promise<number | null> {
+  if (!client) return null;
+  const result = await client.query(api.waitlist.getPublicWaitlistCount, {});
+  return result.count;
 }
 
 /**

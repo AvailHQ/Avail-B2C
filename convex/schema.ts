@@ -81,6 +81,16 @@ export default defineSchema({
     .index("by_redemptionCode", ["redemptionCode"]),
 
   /**
+   * Server-owned public counters. The founding-athlete count is initialized
+   * lazily from its launch baseline and updated in the same transaction as a
+   * new waitlist insert, so browser state can never inflate it.
+   */
+  publicCounters: defineTable({
+    key: v.string(),
+    value: v.number(),
+  }).index("by_key", ["key"]),
+
+  /**
    * Processed Stripe webhook events, keyed by the top-level `event.id`. The
    * webhook claims an event here inside the same transaction as its business
    * mutation, so a redelivered or concurrent duplicate of the same event is a

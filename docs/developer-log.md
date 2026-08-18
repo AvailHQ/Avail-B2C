@@ -964,3 +964,20 @@ Vitest 73 passed; Playwright 26 passed in a single run; `oxlint`, build, and
   downloaded local environment file from being committed.
 - Remaining gate: one controlled real £5 payment and post-payment inspection of
   Stripe, the webhook delivery, Convex state, and the success page.
+
+### Final source and deployment synchronization
+
+- Committed the complete £5 offer change to GitHub `main` as `6447841`
+  (`Switch founding waitlist offer to £5`) and pushed it to
+  `AvailHQ/Avail-B2C`.
+- The GitHub push triggered the existing Vercel integration. The resulting
+  production deployment reached `Ready` and owns the `myavail.vercel.app` and
+  `myavail-git-main-…` aliases.
+- Re-deployed Convex production after the final email-copy correction, ensuring
+  the functions running on `proper-buffalo-120` match commit `6447841` rather
+  than the earlier intermediate build.
+- Post-deploy webhook probe returned HTTP 400 `Invalid signature`, as expected
+  for an unsigned request; signature enforcement remains active.
+- At this point GitHub `main`, Vercel production, Convex production, and the
+  Stripe £5 GBP Payment Link are synchronized. The only outstanding acceptance
+  step is the controlled real £5 payment.

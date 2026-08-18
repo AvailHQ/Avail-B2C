@@ -981,3 +981,87 @@ Vitest 73 passed; Playwright 26 passed in a single run; `oxlint`, build, and
 - At this point GitHub `main`, Vercel production, Convex production, and the
   Stripe £5 GBP Payment Link are synchronized. The only outstanding acceptance
   step is the controlled real £5 payment.
+
+---
+
+## 2026-08-18 — Post-cutover verification pass (no payment)
+
+- **Author:** Claude Opus 5 (`claude-opus-5`), via Claude Code
+- **Branch:** `main` (working tree clean at `f3f4161`)
+- **Scope:** Re-run the test plan against the live production stack after the
+  £5 switch. Payment, refund, and any other money-moving step was deliberately
+  **not** exercised — production is in Stripe live mode, so those would be real
+  charges. Everything else was verified read-only.
+
+### Blocking finding — production cannot send any email
+
+`npx convex env list --prod` returns only `STRIPE_WEBHOOK_SECRET`,
+`STRIPE_PAYMENT_LINK_ID`, and `STRIPE_EXPECTED_LIVEMODE`. **`RESEND_API_KEY` and
+`EMAIL_FROM` are missing on `proper-buffalo-120`** (they are set on dev, which is
+why this was easy to miss).
+
+`sendEmail` returns `false` immediately when the key is absent, so on production:
+a real payer is recorded `paid`, no welcome or confirmation email is sent,
+`confirmationEmailSentAt` is never written, and the success page therefore shows
+*"We'll email you when your confirmation is ready"* — a promise nothing will
+fulfil. With redemption codes now paused, the customer would leave with no
+artefact at all beyond their Stripe receipt.
+
+Fix before the acceptance payment:
+
+```sh
+npx convex env set RESEND_API_KEY re_<key> --prod
+npx convex env set EMAIL_FROM "Avail <hello@verified-domain>" --prod
+```
+
+Production must use a **verified sending domain**; the shared
+`onboarding@resend.dev` sender only delivers to the Resend account owner, so real
+customers would receive nothing.
+
+### Verified — local automated suites
+
+Vitest 73 passed; Playwright 26 passed in a single run (16 payment-UI, 10 a11y);
+`oxlint`, `tsc -b` + `vite build`, `convex codegen --typecheck`, and
+`git diff --check` all clean.
+
+### Verified — production, read-only
+
+| Check | Result |
+| --- | --- |
+| Frontend → Convex deployment | `proper-buffalo-120` (prod); no `basic-otter-332` reference remains |
+| Payment Link in the served bundle | live (no `test_` prefix) |
+| `STRIPE_EXPECTED_LIVEMODE` | `true` |
+| `STRIPE_PAYMENT_LINK_ID` | `plink_1U5Xmq…` (live link) |
+| Unsigned webhook probe | HTTP 400 `Invalid signature` — enforcement on, and not the 500 that a missing policy var would cause |
+| SPA routes `/`, `/success`, `/privacy`, `/terms` | all 200 |
+| Retired copy (£10, "two months", early access code) | absent from the served bundle |
+| Success page with a forged `session_id` | settles into the unverified state; never claims success |
+| Disposable-domain block, exercised on production | rejected with the temporary-address error, **no record written, no email, founding counter unchanged at 348** |
+
+The disposable-domain probe was chosen precisely because it fails validation
+*before* any write, so it exercises production without creating a record,
+sending mail, or inflating the public counter.
+
+### Correction recorded
+
+Mid-pass I claimed the landing page never shows the price. That was wrong. The
+price is disclosed at the payment step: after the email is captured, the section
+renders *"Secure your founding place · £5"* and *"One-time £5 · Priority
+consideration for early access · Non-refundable"*
+(`EarlyAccessSection.tsx:230-232`), confirmed by rendering that state locally.
+Revealing the price after email capture is a conversion choice, not a disclosure
+gap. Related: the bundle greps that produced counts of `1` were counting *lines*
+in a minified single-line bundle, so only the zero results ("copy absent") were
+meaningful.
+
+### Also noted
+
+`.env.local` still points `VITE_STRIPE_PAYMENT_LINK` at the old **£10 sandbox**
+link (its comment still says £10). Local-only — production serves the live £5
+link — but a local end-to-end run would hit the wrong product.
+
+### Outstanding
+
+1. Set `RESEND_API_KEY` / `EMAIL_FROM` on production and confirm a real delivery.
+2. Only then run the controlled real £5 payment and inspect Stripe, the webhook
+   delivery, Convex state, and the success page.

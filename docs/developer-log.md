@@ -1065,3 +1065,48 @@ link — but a local end-to-end run would hit the wrong product.
 1. Set `RESEND_API_KEY` / `EMAIL_FROM` on production and confirm a real delivery.
 2. Only then run the controlled real £5 payment and inspect Stripe, the webhook
    delivery, Convex state, and the success page.
+
+---
+
+## 2026-08-18 — £3 paid-only Founding Waitlist (local, not deployed)
+
+- **Branch:** `main` working tree; changes are intentionally uncommitted and not deployed.
+- **Decision:** remove the free waitlist path completely and change the one-time
+  Founding Waitlist price from £5 to **£3 GBP**.
+
+### Implemented locally
+
+- Removed the landing-page name/email form and saved-details intermediary. Hero,
+  header and paid card now lead directly to the configured Stripe Payment Link.
+- Removed the public Convex `submitEarlyAccess` action and its internal free
+  `join` mutation. New waitlist rows can now be created only when the signed
+  Stripe webhook confirms payment. Existing historical rows were preserved.
+- Updated the Stripe eligibility policy to exactly `300` minor units / `gbp`.
+- The server-owned founding-athlete counter remains backend-only and increments
+  when a brand-new payer is created by the webhook; it is no longer displayed as
+  social proof on the landing page.
+- Removed the audience-card section and unverifiable 500+ / +18% / 95% claims.
+  Added a three-card female-physiology context section and changed the hero to
+  “Learn Your Body. Be Stronger. Train Smarter.”
+- Removed unsupported “first app”, fixed Q4 2026, four-week early-access and
+  lifetime-discount promises from the FAQ.
+- Updated active landing, success, email, refund-test and policy copy to £3.
+
+### Verification
+
+- Vitest: **62 passed** (retired free-signup tests removed with the endpoint).
+- `oxlint`: passed.
+- `tsc -b && vite build`: passed.
+- `git diff --check`: passed.
+- Browser-rendered desktop QA: paid card and physiology section render correctly;
+  footer anchors resolve; Cookie Reject works; no console warnings/errors.
+
+### Blocking configuration before commit/deploy
+
+1. `.env.local` still points to the retired **£10 Sandbox Payment Link**. Create
+   a £3 GBP Sandbox Payment Link (required name/email collection) and replace it.
+2. Confirm/update the Stripe **live** Payment Link to £3 GBP before production.
+3. Production Convex still lacks `RESEND_API_KEY` and `EMAIL_FROM`. Configure a
+   verified sender, or explicitly make Stripe's receipt the only email promise.
+4. After all three are aligned, re-run the controlled payment acceptance test,
+   then commit, deploy Convex, push GitHub `main`, and let Vercel redeploy.

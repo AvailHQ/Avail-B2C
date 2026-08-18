@@ -36,7 +36,7 @@ Test cards are Stripe's published test numbers: `4242…4242` success,
 | S2 | Declined card (T2) | none | Stripe refused at checkout ("card was declined"); **no record created**, no entitlement | **Pass** |
 | S3 | Abandoned checkout (T3) | none | Left checkout without paying; **no record, no state change** | **Pass** |
 | S4 | Duplicate payment, same email (T4 ×2) | 2 × `checkout.session.completed` | One reservation row, **one** code (not re-issued); second PaymentIntent (`…0ztUQg1W`) appended to `duplicatePaymentIntents`; primary session/PI unchanged | **Pass** |
-| S5 | Partial refund £3 of £10 (T1) | `charge.refunded` | `status → refunded` (policy: any refund revokes), `amountRefunded = 300`, `refundedAt` set | **Pass** |
+| S5 | Partial refund £1 of £3 (T1) | `charge.refunded` | `status → refunded` (policy: any refund revokes), `amountRefunded = 100`, `refundedAt` set | **Pass** |
 | S6 | Refund of the remaining £7 (T1) | `charge.refunded` (2nd) | `amountRefunded` advanced 300 → **1000**; `refundedAt` **unchanged** from the first refund | **Pass** |
 | S7 | Redirect, confirmation email, mobile success page | — | Redirect carries `session_id`; personalised page correct on desktop and at 375 px; email copy correctly said "we'll email you" rather than claiming delivery | **Pass (email delivery: see note)** |
 

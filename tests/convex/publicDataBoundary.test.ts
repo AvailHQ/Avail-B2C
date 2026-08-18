@@ -20,7 +20,7 @@ function paidArgs(overrides: Record<string, unknown> = {}) {
     name: "Test Payer",
     stripePaymentIntentId: "pi_1",
     stripeCustomerId: "cus_1",
-    amountPaid: 1000,
+    amountPaid: 300,
     currency: "gbp",
     redemptionCodeCandidates: generateRedemptionCodeCandidates(),
     ...overrides,
@@ -123,14 +123,16 @@ describe("public data boundaries", () => {
   });
 
   it("DATA-07: payment mutations are internal; only the intended queries are public", async () => {
-    for (const name of ["markPaid", "markRefunded", "markPendingPayment", "join"]) {
+    for (const name of ["markPaid", "markRefunded", "markPendingPayment"]) {
       expect((waitlistModule as any)[name].isInternal).toBe(true);
     }
 
     // The documented public surface stays public.
-    for (const name of ["checkPosition", "getBySessionId", "submitEarlyAccess"]) {
+    for (const name of ["checkPosition", "getBySessionId"]) {
       expect((waitlistModule as any)[name].isInternal).toBeFalsy();
     }
+
+    expect((waitlistModule as any).submitEarlyAccess).toBeUndefined();
   });
 });
 
@@ -142,8 +144,8 @@ describe("REF-03 — partial refund policy", () => {
     const res: any = await t.mutation(internal.waitlist.markRefunded, {
       eventId: "evt_partial",
       stripePaymentIntentId: "pi_1",
-      amountRefunded: 300,
-      chargeAmount: 1000,
+      amountRefunded: 100,
+      chargeAmount: 300,
     });
 
     const rec = await t.run(async (ctx: any) =>
@@ -156,7 +158,7 @@ describe("REF-03 — partial refund policy", () => {
     // Policy decision: any refund revokes the entitlement, partial included.
     expect(res.partialRefund).toBe(true);
     expect(rec.status).toBe("refunded");
-    expect(rec.amountRefunded).toBe(300);
+    expect(rec.amountRefunded).toBe(100);
   });
 
   it("consecutive partial refunds advance the recorded total without moving refundedAt", async () => {
@@ -171,12 +173,12 @@ describe("REF-03 — partial refund policy", () => {
           .unique(),
       );
 
-    // £3 of £10.
+    // £1 of £3.
     await t.mutation(internal.waitlist.markRefunded, {
       eventId: "evt_partial_1",
       stripePaymentIntentId: "pi_1",
-      amountRefunded: 300,
-      chargeAmount: 1000,
+      amountRefunded: 100,
+      chargeAmount: 300,
     });
     const afterFirst = await readRecord();
 
@@ -184,13 +186,13 @@ describe("REF-03 — partial refund policy", () => {
     const second: any = await t.mutation(internal.waitlist.markRefunded, {
       eventId: "evt_partial_2",
       stripePaymentIntentId: "pi_1",
-      amountRefunded: 1000,
-      chargeAmount: 1000,
+      amountRefunded: 300,
+      chargeAmount: 300,
     });
     const afterSecond = await readRecord();
 
     expect(second.alreadyRefunded).toBe(true);
-    expect(afterSecond.amountRefunded).toBe(1000); // not stale at 300
+    expect(afterSecond.amountRefunded).toBe(300); // not stale at 100
     expect(afterSecond.refundedAt).toBe(afterFirst.refundedAt); // timestamp intact
   });
 
@@ -201,14 +203,14 @@ describe("REF-03 — partial refund policy", () => {
     await t.mutation(internal.waitlist.markRefunded, {
       eventId: "evt_full",
       stripePaymentIntentId: "pi_1",
-      amountRefunded: 1000,
-      chargeAmount: 1000,
+      amountRefunded: 300,
+      chargeAmount: 300,
     });
     await t.mutation(internal.waitlist.markRefunded, {
       eventId: "evt_stale",
       stripePaymentIntentId: "pi_1",
-      amountRefunded: 300,
-      chargeAmount: 1000,
+      amountRefunded: 100,
+      chargeAmount: 300,
     });
 
     const rec = await t.run(async (ctx: any) =>
@@ -217,7 +219,7 @@ describe("REF-03 — partial refund policy", () => {
         .withIndex("by_email", (q: any) => q.eq("email", PAYER))
         .unique(),
     );
-    expect(rec.amountRefunded).toBe(1000);
+    expect(rec.amountRefunded).toBe(300);
   });
 
   it("a full refund is not flagged as partial", async () => {
@@ -227,8 +229,8 @@ describe("REF-03 — partial refund policy", () => {
     const res: any = await t.mutation(internal.waitlist.markRefunded, {
       eventId: "evt_full",
       stripePaymentIntentId: "pi_1",
-      amountRefunded: 1000,
-      chargeAmount: 1000,
+      amountRefunded: 300,
+      chargeAmount: 300,
     });
 
     expect(res.partialRefund).toBe(false);

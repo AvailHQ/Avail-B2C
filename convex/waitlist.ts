@@ -1,26 +1,9 @@
-import { action, internalMutation, internalQuery, query } from "./_generated/server";
+import { internalMutation, internalQuery, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
-import { validateEmail } from "./emailValidation";
-import { sendEmail, welcomeEmail } from "./email";
-import { validateInputSizes } from "./inputLimits";
-import {
-  GLOBAL_SIGNUP_KEY,
-  SIGNUP_EMAIL_LIMIT,
-  SIGNUP_GLOBAL_LIMIT,
-  emailSignupKey,
-} from "./rateLimit";
 
 const FOUNDING_ATHLETES_COUNTER_KEY = "foundingAthletes";
 const FOUNDING_ATHLETES_BASELINE = 347;
-
-async function getFoundingAthletesCount(ctx: any): Promise<number> {
-  const counter = await ctx.db
-    .query("publicCounters")
-    .withIndex("by_key", (q: any) => q.eq("key", FOUNDING_ATHLETES_COUNTER_KEY))
-    .unique();
-  return counter?.value ?? FOUNDING_ATHLETES_BASELINE;
-}
 
 async function incrementFoundingAthletesCount(ctx: any): Promise<number> {
   const counter = await ctx.db
@@ -39,12 +22,6 @@ async function incrementFoundingAthletesCount(ctx: any): Promise<number> {
   }
   return value;
 }
-
-/** Public, read-only social-proof value. No waitlist records are exposed. */
-export const getPublicWaitlistCount = query({
-  args: {},
-  handler: async (ctx: any) => ({ count: await getFoundingAthletesCount(ctx) }),
-});
 
 /**
  * Claim a Stripe event id inside the current transaction. Returns true the first
@@ -65,133 +42,6 @@ async function claimStripeEvent(ctx: any, eventId: string, type: string): Promis
   await ctx.db.insert("stripeEvents", { eventId, type, processedAt: Date.now() });
   return true;
 }
-
-/**
- * Public entry point for the signup form. Validates the email (format,
- * disposable domains, MX) in an action — which can do network I/O — then writes
- * the record and sends the welcome email. Returns a validation error instead of
- * writing when the email looks fake.
- */
-export const submitEarlyAccess = action({
-  args: {
-    name: v.string(),
-    email: v.string(),
-    marketingConsent: v.optional(v.boolean()),
-    privacyPolicyVersion: v.optional(v.string()),
-    utmSource: v.optional(v.string()),
-    utmMedium: v.optional(v.string()),
-    utmCampaign: v.optional(v.string()),
-    referrer: v.optional(v.string()),
-    landingVariant: v.optional(v.string()),
-  },
-  handler: async (ctx: any, args: any): Promise<any> => {
-    // 1. Size limits first: cheapest check, no database or network work.
-    const sizeError = validateInputSizes(args);
-    if (sizeError) {
-      return { success: false, error: sizeError };
-    }
-
-    // 2. Rate limits before the DNS lookup and the email send, so burst traffic
-    //    cannot amplify those (ABUSE-05). Global bucket first: it is the one
-    //    protecting spend, and it must not be bypassable by varying the email.
-    for (const bucket of [
-      { key: GLOBAL_SIGNUP_KEY, ...SIGNUP_GLOBAL_LIMIT },
-      { key: await emailSignupKey(args.email), ...SIGNUP_EMAIL_LIMIT },
-    ]) {
-      const limit = await ctx.runMutation(internal.rateLimit.consume, bucket);
-      if (!limit.allowed) {
-        return {
-          success: false,
-          rateLimited: true,
-          error: "Too many attempts just now. Please try again in a few minutes.",
-        };
-      }
-    }
-
-    // 3. Network validation (bounded by DNS_LOOKUP_TIMEOUT_MS).
-    const error = await validateEmail(args.email);
-    if (error) {
-      return { success: false, error };
-    }
-
-    const result = await ctx.runMutation(internal.waitlist.join, args);
-
-    // Best-effort welcome email for brand-new signups only.
-    if (result?.user && !result.alreadyJoined) {
-      const firstName = String(result.user.name || "").split(" ")[0] || "there";
-      const { subject, html } = welcomeEmail(firstName);
-      await sendEmail({ to: result.user.email, subject, html });
-    }
-
-    return result;
-  },
-});
-
-/**
- * Write an early access signup. Internal: reached only through
- * `submitEarlyAccess`, which validates the email first.
- *
- * A new signup starts in the `email_only` status. The Stripe checkout flow later
- * moves it to `pending_payment` / `paid` via the mutations below.
- */
-export const join = internalMutation({
-  args: {
-    name: v.string(),
-    email: v.string(),
-    marketingConsent: v.optional(v.boolean()),
-    privacyPolicyVersion: v.optional(v.string()),
-    // Attribution captured from the landing page (all optional).
-    utmSource: v.optional(v.string()),
-    utmMedium: v.optional(v.string()),
-    utmCampaign: v.optional(v.string()),
-    referrer: v.optional(v.string()),
-    landingVariant: v.optional(v.string()),
-  },
-  handler: async (ctx: any, args: any) => {
-    const email = args.email.trim().toLowerCase();
-    const name = args.name.trim();
-    const marketingConsent = args.marketingConsent === true;
-
-    // Check if email already exists
-    const existing = await ctx.db
-      .query("waitlist")
-      .withIndex("by_email", (q: any) => q.eq("email", email))
-      .unique();
-
-    if (existing !== null) {
-      return {
-        success: true,
-        alreadyJoined: true,
-        user: existing,
-        publicWaitlistCount: await getFoundingAthletesCount(ctx),
-      };
-    }
-
-    const userId = await ctx.db.insert("waitlist", {
-      name,
-      email,
-      status: "email_only",
-      marketingConsent,
-      consentedAt: marketingConsent ? Date.now() : undefined,
-      privacyPolicyVersion: args.privacyPolicyVersion,
-      utmSource: args.utmSource,
-      utmMedium: args.utmMedium,
-      utmCampaign: args.utmCampaign,
-      referrer: args.referrer,
-      landingVariant: args.landingVariant,
-    });
-
-    const newUser = await ctx.db.get(userId);
-    const publicWaitlistCount = await incrementFoundingAthletesCount(ctx);
-
-    return {
-      success: true,
-      alreadyJoined: false,
-      user: newUser,
-      publicWaitlistCount,
-    };
-  },
-});
 
 /**
  * Mark that a user has been sent to Stripe checkout.
@@ -246,7 +96,7 @@ export const markPaid = internalMutation({
     amountPaid: v.optional(v.number()),
     currency: v.optional(v.string()),
     // Retained temporarily as an optional compatibility input for older tests
-    // and queued calls. New £5 reservations do not issue redemption codes.
+    // and queued calls. New £3 reservations do not issue redemption codes.
     redemptionCodeCandidates: v.optional(v.array(v.string())),
   },
   handler: async (ctx: any, args: any) => {
@@ -302,6 +152,7 @@ export const markPaid = internalMutation({
         ...paymentFields,
         marketingConsent: false,
       });
+      await incrementFoundingAthletesCount(ctx);
       await ctx.scheduler.runAfter(0, internal.paymentEmail.sendPaymentConfirmation, {
         waitlistId: userId,
         attempt: 1,
@@ -444,7 +295,7 @@ export const markRefunded = internalMutation({
     }
 
     // Policy (REF-03): any refund revokes the reservation, partial included.
-    // A partial refund is unusual here (fixed GBP 10 product), so log it — the
+    // A partial refund is unusual here (fixed GBP 3 product), so log it — the
     // amount is recorded either way for follow-up.
     const isPartial =
       typeof args.amountRefunded === "number" &&

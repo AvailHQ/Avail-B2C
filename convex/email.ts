@@ -62,7 +62,7 @@ export function welcomeEmail(firstName: string): { subject: string; html: string
       </p>
       <p style="font-size:16px;line-height:1.6;">
         You can secure your place on the Founding Waitlist for a one-time
-        &pound;5 and receive priority consideration for early access.
+        &pound;3 and receive priority consideration for early access.
         Reservations are non-refundable, except where required by law.
       </p>
       <p style="font-size:16px;line-height:1.6;">We'll be in touch as launch gets closer.</p>
@@ -76,7 +76,7 @@ export function paymentConfirmationEmail(firstName: string): { subject: string; 
     html: layout(`
       <p style="font-size:16px;line-height:1.6;">Hi ${firstName},</p>
       <p style="font-size:16px;line-height:1.6;">
-        Your &pound;5 Founding Waitlist reservation is confirmed. You'll receive
+        Your &pound;3 Founding Waitlist reservation is confirmed. You'll receive
         priority consideration for early access and be among the first to hear
         about launch updates.
       </p>

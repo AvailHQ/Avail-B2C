@@ -6,7 +6,7 @@ import { v } from "convex/values";
  *
  * - email_only:      contact captured, no Stripe checkout started yet
  * - pending_payment: user has been sent to Stripe checkout, not confirmed
- * - paid:            Stripe confirmed the GBP 10 reservation
+ * - paid:            Stripe confirmed the GBP 3 reservation
  * - refunded:        a paid reservation was reversed. Reservations are
  *                    non-refundable by policy, so this only covers exceptional
  *                    cases such as Stripe chargebacks / disputes.

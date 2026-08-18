@@ -1077,3 +1077,5 @@ link — but a local end-to-end run would hit the wrong product.
   environment behavior was changed.
 - Verification: Vitest 73 passed; `oxlint`, production build and
   `git diff --check` passed.
+- Follow-up: reordered the landing page so the female-physiology context section
+  appears before the audience/training-style section.

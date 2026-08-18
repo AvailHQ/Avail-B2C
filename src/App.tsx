@@ -273,8 +273,8 @@ function LandingPage() {
           onRegisterAnother={handleRegisterAnother}
         />
         <FeaturesSection items={appFeatures} />
-        <GymBenefitsSection />
         <WomenTrainingGapSection />
+        <GymBenefitsSection />
         <FAQSection
           faqs={faqs}
           expandedFaq={expandedFaq}

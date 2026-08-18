@@ -61,7 +61,9 @@ test.describe('WCAG A/AA', () => {
 
   test('paid waitlist CTA state', async ({ page }) => {
     await preparePage(page, '/#early-access');
-    const cta = page.getByRole('link', { name: 'Join the Founding Waitlist · £3.50 GBP' });
+    // The separator is decorative, so the accessible name is the same at every
+    // breakpoint even though the label stacks on a phone.
+    const cta = page.getByRole('link', { name: 'Join Founding Waitlist £3.50 GBP' });
     await expect(cta).toBeVisible();
     await expect(cta).toHaveAttribute('href', /^https:\/\/buy\.stripe\.com\//);
     await expectAccessible(page);

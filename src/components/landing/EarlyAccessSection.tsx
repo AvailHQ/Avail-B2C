@@ -77,7 +77,19 @@ export function EarlyAccessSection() {
             )}
 
             <a href={STRIPE_PAYMENT_LINK} className={primaryButtonClass}>
-              Join the Founding Waitlist · £3.50 GBP <ArrowRight size={16} aria-hidden="true" />
+              {/* Below 400px the label cannot fit one line, so stack it
+                  deliberately instead of letting it break after the separator.
+                  Measured: the one-line label needs ~245px, which 390px does not have. */}
+              <span className="flex flex-col items-center leading-tight min-[25rem]:flex-row min-[25rem]:gap-1.5">
+                <span>Join Founding Waitlist</span>
+                <span>
+                  <span className="hidden min-[25rem]:inline" aria-hidden="true">
+                    ·{' '}
+                  </span>
+                  £3.50 GBP
+                </span>
+              </span>
+              <ArrowRight size={16} aria-hidden="true" />
             </a>
 
             <p className="type-caption mx-auto mt-3 max-w-[680px] text-[#64707D]">

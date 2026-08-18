@@ -898,3 +898,69 @@ list size, known throwaways blocked, real providers never blocked,
 case/whitespace handling, malformed entries, and the documented gap.
 Vitest 73 passed; Playwright 26 passed in a single run; `oxlint`, build, and
 `git diff --check` clean.
+
+---
+
+## 2026-08-18 — £5 founding-waitlist offer
+
+- **Author:** Codex (GPT-5), via Codex desktop
+- **Scope:** Replace the £10/two-month entitlement with a one-time £5 GBP
+  founding-waitlist reservation and pause redemption-code issuance.
+
+### Completed so far
+
+- Changed the server-side Stripe eligibility policy from GBP 1000 to GBP 500.
+  Payment Link id and live/test-environment checks remain fail-closed.
+- Stopped the webhook from generating redemption-code candidates.
+- New direct payers and existing waitlist members promoted to `paid` no longer
+  receive `redemptionCode` or `redemptionCodeIssuedAt` values.
+- Kept the optional schema fields and index for historical compatibility, so no
+  destructive migration is required.
+- Updated regression contracts to require successful paid records without a
+  redemption code.
+
+### Verification and deployment status
+
+- Stripe eligibility tests: 10 passed.
+- Payment/idempotency and public-boundary tests: 37 passed.
+- Convex code generation and type checking: passed.
+- At this checkpoint the dashboard Payment Link had been changed to £5 GBP;
+  production deployment followed only after the copy and regression suite were
+  complete.
+
+### Customer-facing contract completed
+
+- Landing-page CTA and supporting copy now describe a one-time **£5 Founding
+  Waitlist** reservation with priority consideration for early access.
+- Removed the previous two-month entitlement claim everywhere in the active
+  frontend and transactional-email templates.
+- The success page confirms the £5 reservation without displaying an activation
+  code, and the public reservation lookup no longer exposes the historical
+  redemption-code field.
+- Updated welcome and payment-confirmation emails to match the new offer and to
+  preserve the statutory exception to the non-refundable wording.
+
+### Final local verification
+
+- Vitest: 73 passed.
+- Playwright payment UI + accessibility: 26 passed across desktop and mobile.
+- `oxlint`: passed.
+- `tsc -b && vite build`: passed.
+- `git diff --check`: passed.
+
+### Production deployment and read-only verification
+
+- Deployed the £5 GBP eligibility policy and no-code payment flow to Convex
+  production deployment `proper-buffalo-120`.
+- Linked the local workspace to the existing Vercel `myavail` project and
+  deployed to production; `https://myavail.vercel.app` now aliases the new
+  deployment.
+- Fetched the live JavaScript bundle and confirmed it contains the £5 Founding
+  Waitlist CTA and confirmation copy, with no active £10, two-month, or early
+  access code copy.
+- An unsigned request to the production Stripe webhook still returns HTTP 400
+  `Invalid signature`, confirming signature enforcement remains active.
+- Vercel added `.env*` to `.gitignore` while linking the project, preventing the
+  downloaded local environment file from being committed.
+- Remaining gate: one controlled real £5 payment and post-payment inspection of
+  Stripe, the webhook delivery, Convex state, and the success page.

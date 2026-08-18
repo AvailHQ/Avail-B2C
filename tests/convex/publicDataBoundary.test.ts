@@ -49,7 +49,7 @@ describe("public data boundaries", () => {
     expect(res).toEqual({ found: false });
   });
 
-  it("DATA-03: getBySessionId for a paid reservation returns only display fields + code", async () => {
+  it("DATA-03: getBySessionId for a paid reservation returns only display fields", async () => {
     const t = convexTest(schema, modules);
     await seedPaid(t);
 
@@ -58,10 +58,10 @@ describe("public data boundaries", () => {
     });
 
     expect(Object.keys(res).sort()).toEqual(
-      ["confirmationEmailSent", "email", "found", "name", "redemptionCode", "status"].sort(),
+      ["confirmationEmailSent", "email", "found", "name", "status"].sort(),
     );
     expect(res.status).toBe("paid");
-    expect(res.redemptionCode).toBeTruthy();
+    expect(res.redemptionCode).toBeUndefined();
   });
 
   it("DATA-04: getBySessionId hides the code for a refunded reservation", async () => {

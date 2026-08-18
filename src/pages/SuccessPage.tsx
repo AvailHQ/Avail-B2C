@@ -12,7 +12,6 @@ type LookupState =
       phase: 'paid';
       email?: string;
       name?: string;
-      redemptionCode?: string;
       confirmationEmailSent: boolean;
     }
   | { phase: 'unverified' };
@@ -38,7 +37,6 @@ export function SuccessPage() {
           phase: 'paid',
           email: reservation.email,
           name: reservation.name,
-          redemptionCode: reservation.redemptionCode,
           confirmationEmailSent: reservation.confirmationEmailSent === true,
         }),
       onUnverified: () => setState({ phase: 'unverified' }),
@@ -78,37 +76,23 @@ export function SuccessPage() {
               </h1>
 
               <p className="type-lead text-[#4F5B60]">
-                Your &pound;10 early access reservation is confirmed &mdash; two months of
-                Avail and a founding place at the front of the queue.
+                Your &pound;5 Founding Waitlist reservation is confirmed. You&rsquo;ll receive
+                priority consideration for early access and be among the first to hear
+                about launch updates.
               </p>
-
-              {state.redemptionCode && (
-                <div className="w-full rounded-2xl border border-[#17333A]/12 bg-white/70 px-6 py-5">
-                  <p className="type-caption font-extrabold tracking-[0.6px] text-[#64707D] uppercase">
-                    Your early access code
-                  </p>
-                  <p className="type-feature-title mt-2 font-black tracking-[0.15em] text-[#17333A] tabular-nums">
-                    {state.redemptionCode}
-                  </p>
-                  <p className="type-caption mt-2 text-[#64707D]">
-                    Keep this safe &mdash; you&rsquo;ll use it to activate your access when
-                    Avail launches.
-                  </p>
-                </div>
-              )}
 
               <p className="type-body text-[#64707D]">
                 {state.confirmationEmailSent && state.email ? (
                   <>
                     We&rsquo;ve sent a confirmation to{' '}
                     <strong className="font-bold text-[#17333A]">{state.email}</strong>. When
-                    the app launches, we&rsquo;ll send everything you need to activate your
+                    launch approaches, we&rsquo;ll send updates and the next steps for early
                     access.
                   </>
                 ) : (
                   <>
-                    We&rsquo;ll email you when your confirmation is ready. When the app
-                    launches, we&rsquo;ll send everything you need to activate your access.
+                    We&rsquo;ll email you when your confirmation is ready, followed by launch
+                    updates and the next steps for early access.
                   </>
                 )}
               </p>

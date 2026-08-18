@@ -44,14 +44,14 @@ function eventCount(t: T) {
 }
 
 describe("markPaid — entitlement & idempotency", () => {
-  it("PAY-08: creates one paid record with a code when no reservation matches", async () => {
+  it("PAY-08: creates one paid record without a code when no reservation matches", async () => {
     const t = convexTest(schema, modules);
     const res: any = await t.mutation(internal.waitlist.markPaid, paidArgs());
 
     expect(res.newlyPaid).toBe(true);
     const rec = await recordByEmail(t, PAYER);
     expect(rec.status).toBe("paid");
-    expect(rec.redemptionCode).toBeTruthy();
+    expect(rec.redemptionCode).toBeUndefined();
     expect(await waitlistCount(t)).toBe(1);
   });
 

@@ -150,7 +150,7 @@ export function EarlyAccessSection({
                   </>
                 ) : (
                   <>
-                    Continue to Founding Access <ArrowRight size={16} />
+                    Continue to Reserve Your Spot <ArrowRight size={16} />
                   </>
                 )}
               </button>
@@ -165,7 +165,7 @@ export function EarlyAccessSection({
                   <strong className="font-black text-[#17333A]">{foundingAthletesCount ?? '—'}</strong> founding athletes have already joined
                 </span>
               </p>
-              <p className="type-body mt-1">Priority access. Two months of Avail included.</p>
+              <p className="type-body mt-1">Join the first wave of Avail.</p>
             </div>
           </>
         )}
@@ -222,14 +222,14 @@ export function EarlyAccessSection({
 
             <div>
               <h2 className="type-feature-title mb-1 font-extrabold text-[#1B1F23]">Your details are saved, {joinedUser.name.split(' ')[0]}.</h2>
-              <p className="type-body text-[#64707D]">Reserve your spot to lock in two months of Avail and priority access before launch.</p>
+              <p className="type-body text-[#64707D]">Secure your place on the Founding Waitlist and receive priority consideration for early access.</p>
             </div>
 
             <div className="w-full">
               <a href={paymentUrl} className={primaryButtonClass}>
-                Reserve early access &middot; &pound;10 <ArrowRight size={16} />
+                Secure your founding place &middot; &pound;5 <ArrowRight size={16} />
               </a>
-              <p className="type-caption mt-2 text-[#64707D]">One-time &pound;10 &middot; Two months of Avail &middot; Non-refundable</p>
+              <p className="type-caption mt-2 text-[#64707D]">One-time &pound;5 &middot; Priority consideration for early access &middot; Non-refundable</p>
             </div>
 
             <button

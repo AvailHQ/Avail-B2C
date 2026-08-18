@@ -7,7 +7,6 @@ const paid: ReservationLookup = {
   status: "paid",
   name: "Robin Fields",
   email: "robin@example.com",
-  redemptionCode: "ABCD2345EFGH6789",
   confirmationEmailSent: true,
 };
 

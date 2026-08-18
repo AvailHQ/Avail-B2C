@@ -40,7 +40,7 @@ export function loadStripePaymentPolicy(
   }
 
   return {
-    amount: 1000,
+    amount: 500,
     currency: "gbp",
     paymentLinkId,
     livemode: livemodeValue === "true",

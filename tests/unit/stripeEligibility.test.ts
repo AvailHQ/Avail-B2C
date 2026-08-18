@@ -7,7 +7,7 @@ import {
 } from "../../convex/stripeSecurity";
 
 const policy: StripePaymentPolicy = {
-  amount: 1000,
+  amount: 500,
   currency: "gbp",
   paymentLinkId: "plink_avail",
   livemode: false,
@@ -16,7 +16,7 @@ const policy: StripePaymentPolicy = {
 const validSession: CheckoutSessionForValidation = {
   id: "cs_test_avail",
   payment_status: "paid",
-  amount_total: 1000,
+  amount_total: 500,
   currency: "gbp",
   payment_link: "plink_avail",
   livemode: false,
@@ -52,7 +52,7 @@ describe("validateCheckoutSession", () => {
 });
 
 describe("loadStripePaymentPolicy", () => {
-  it("loads the fixed GBP 10 policy with an explicit environment", () => {
+  it("loads the fixed GBP 5 policy with an explicit environment", () => {
     expect(
       loadStripePaymentPolicy({
         STRIPE_PAYMENT_LINK_ID: " plink_avail ",

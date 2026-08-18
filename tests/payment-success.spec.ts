@@ -36,17 +36,16 @@ const paidValue = {
   status: 'paid',
   name: 'Robin Fields',
   email: 'robin@example.com',
-  redemptionCode: 'ABCD2345EFGH6789',
   confirmationEmailSent: true,
 };
 
 test.describe('success page states', () => {
-  test('UI-01: paid with code and sent email shows full confirmation', async ({ page }) => {
+  test('UI-01: paid with sent email shows full confirmation', async ({ page }) => {
     await mockLookup(page, paidValue);
     await page.goto(`/success?session_id=${SESSION}`);
 
     await expect(page.getByRole('heading', { name: /You’re in, Robin\./ })).toBeVisible();
-    await expect(page.getByText('ABCD2345EFGH6789')).toBeVisible();
+    await expect(page.getByText(/£5 Founding Waitlist reservation is confirmed/)).toBeVisible();
     await expect(page.getByText(/We’ve sent a confirmation to/)).toBeVisible();
     await expect(page.getByText('robin@example.com')).toBeVisible();
   });
@@ -56,7 +55,6 @@ test.describe('success page states', () => {
     await page.goto(`/success?session_id=${SESSION}`);
 
     await expect(page.getByRole('heading', { name: /You’re in/ })).toBeVisible();
-    await expect(page.getByText('ABCD2345EFGH6789')).toBeVisible();
     // Must not claim an email was already sent.
     await expect(page.getByText(/We’ve sent a confirmation to/)).toHaveCount(0);
     await expect(page.getByText(/We’ll email you when your confirmation is ready/)).toBeVisible();
@@ -68,7 +66,6 @@ test.describe('success page states', () => {
 
     await expect(page.getByRole('heading', { name: /we’re checking your reservation/i })).toBeVisible();
     await expect(page.getByText(/reservation is confirmed/)).toHaveCount(0);
-    await expect(page.getByText('ABCD2345EFGH6789')).toHaveCount(0);
   });
 
   test('UI-04: an unknown or forged session id ends in the unverified state', async ({ page }) => {
@@ -117,10 +114,10 @@ test.describe('success page states', () => {
     await expect(page.getByRole('heading', { name: /You’re in, Robin\./ })).toBeVisible({
       timeout: 10_000,
     });
-    await expect(page.getByText('ABCD2345EFGH6789')).toBeVisible();
+    await expect(page.getByText(/£5 Founding Waitlist reservation is confirmed/)).toBeVisible();
   });
 
-  test('UI-06: a refunded reservation shows no code and no paid confirmation', async ({ page }) => {
+  test('UI-06: a refunded reservation shows no paid confirmation', async ({ page }) => {
     await mockLookup(page, {
       found: true,
       status: 'refunded',
@@ -133,8 +130,6 @@ test.describe('success page states', () => {
     await expect(
       page.getByRole('heading', { name: /we’re checking your reservation/i }),
     ).toBeVisible({ timeout: 25_000 });
-    await expect(page.getByText('ABCD2345EFGH6789')).toHaveCount(0);
-    await expect(page.getByText(/Your early access code/i)).toHaveCount(0);
   });
 
   // Note: this app has no client-side routing, so leaving /success is a full

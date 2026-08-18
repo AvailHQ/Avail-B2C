@@ -3,7 +3,6 @@ import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { validateEmail } from "./emailValidation";
 import { sendEmail, welcomeEmail } from "./email";
-import { isValidRedemptionCode } from "./redemptionCode";
 import { validateInputSizes } from "./inputLimits";
 import {
   GLOBAL_SIGNUP_KEY,
@@ -46,27 +45,6 @@ export const getPublicWaitlistCount = query({
   args: {},
   handler: async (ctx: any) => ({ count: await getFoundingAthletesCount(ctx) }),
 });
-
-/**
- * Select the first secure candidate not already present in the database. The
- * candidates are generated with Web Crypto by the webhook HTTP action because
- * Convex mutations must remain deterministic.
- */
-async function selectUniqueRedemptionCode(ctx: any, candidates: string[]): Promise<string> {
-  for (const code of candidates) {
-    if (!isValidRedemptionCode(code)) continue;
-    const dup = await ctx.db
-      .query("waitlist")
-      .withIndex("by_redemptionCode", (q: any) => q.eq("redemptionCode", code))
-      .unique();
-
-    if (dup === null) {
-      return code;
-    }
-  }
-
-  throw new Error("No valid unique redemption code candidate was provided");
-}
 
 /**
  * Claim a Stripe event id inside the current transaction. Returns true the first
@@ -255,8 +233,7 @@ export const markPendingPayment = internalMutation({
  * by email (Payment Link flow). If the payer has no matching record at all, a
  * new paid record is created so a paying customer is never dropped.
  *
- * Internal: only server code may call this — it is what issues the redemption
- * code, so it must never be reachable from the browser.
+ * Internal: only server code may call this because it grants paid status.
  */
 export const markPaid = internalMutation({
   args: {
@@ -268,7 +245,9 @@ export const markPaid = internalMutation({
     stripeCustomerId: v.optional(v.string()),
     amountPaid: v.optional(v.number()),
     currency: v.optional(v.string()),
-    redemptionCodeCandidates: v.array(v.string()),
+    // Retained temporarily as an optional compatibility input for older tests
+    // and queued calls. New £5 reservations do not issue redemption codes.
+    redemptionCodeCandidates: v.optional(v.array(v.string())),
   },
   handler: async (ctx: any, args: any) => {
     // Idempotency: process each Stripe event at most once (covers redelivery and
@@ -316,18 +295,12 @@ export const markPaid = internalMutation({
       if (!email) {
         return { success: false, reason: "no_match_no_email" };
       }
-      const redemptionCode = await selectUniqueRedemptionCode(
-        ctx,
-        args.redemptionCodeCandidates,
-      );
       const name = args.name?.trim() || email.split("@")[0];
       const userId = await ctx.db.insert("waitlist", {
         name,
         email,
         ...paymentFields,
         marketingConsent: false,
-        redemptionCode,
-        redemptionCodeIssuedAt: Date.now(),
       });
       await ctx.scheduler.runAfter(0, internal.paymentEmail.sendPaymentConfirmation, {
         waitlistId: userId,
@@ -369,15 +342,8 @@ export const markPaid = internalMutation({
       return { success: true, alreadyPaid: true };
     }
 
-    // Issue the early access redemption code now that payment is confirmed.
-    const redemptionCode =
-      user.redemptionCode ??
-      (await selectUniqueRedemptionCode(ctx, args.redemptionCodeCandidates));
-
     await ctx.db.patch(user._id, {
       ...paymentFields,
-      redemptionCode,
-      redemptionCodeIssuedAt: user.redemptionCodeIssuedAt ?? Date.now(),
     });
     await ctx.scheduler.runAfter(0, internal.paymentEmail.sendPaymentConfirmation, {
       waitlistId: user._id,
@@ -588,7 +554,6 @@ export const getBySessionId = query({
       status: user.status,
       name: user.name,
       email: user.email,
-      redemptionCode: user.status === "paid" ? user.redemptionCode : undefined,
       confirmationEmailSent:
         user.status === "paid" && user.confirmationEmailSentAt !== undefined,
     };

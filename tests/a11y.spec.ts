@@ -61,7 +61,7 @@ test.describe('WCAG A/AA', () => {
 
   test('waitlist validation state', async ({ page }) => {
     await preparePage(page, '/#early-access');
-    await page.getByRole('button', { name: 'Continue to Founding Access' }).click();
+    await page.getByRole('button', { name: 'Continue to Reserve Your Spot' }).click();
     await expect(page.getByRole('alert')).toBeVisible();
     await expect(page.locator('#join-name')).toBeFocused();
     await expect(page.locator('#join-name')).toHaveAttribute('aria-invalid', 'true');

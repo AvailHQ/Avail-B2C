@@ -1,7 +1,6 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { generateRedemptionCodeCandidates } from "./redemptionCode";
 import { loadStripePaymentPolicy, validateCheckoutSession } from "./stripeSecurity";
 import { verifyStripeSignature } from "./stripeSignature";
 
@@ -59,7 +58,6 @@ const stripeWebhook = httpAction(async (ctx, request) => {
           typeof session.customer === "string" ? session.customer : undefined,
         amountPaid: typeof session.amount_total === "number" ? session.amount_total : undefined,
         currency: session.currency ?? undefined,
-        redemptionCodeCandidates: generateRedemptionCodeCandidates(),
       });
 
       break;

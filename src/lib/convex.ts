@@ -49,7 +49,6 @@ export interface ReservationLookup {
   status?: 'email_only' | 'pending_payment' | 'paid' | 'refunded';
   name?: string;
   email?: string;
-  redemptionCode?: string;
   confirmationEmailSent?: boolean;
 }
 

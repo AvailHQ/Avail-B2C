@@ -61,9 +61,9 @@ export function welcomeEmail(firstName: string): { subject: string; html: string
         Thanks for joining the Avail early access list. You're in.
       </p>
       <p style="font-size:16px;line-height:1.6;">
-        To lock in your founding place — priority access plus your first two
-        months of Avail — you can reserve now for a one-time &pound;10.
-        Reservations are non-refundable.
+        You can secure your place on the Founding Waitlist for a one-time
+        &pound;5 and receive priority consideration for early access.
+        Reservations are non-refundable, except where required by law.
       </p>
       <p style="font-size:16px;line-height:1.6;">We'll be in touch as launch gets closer.</p>
     `),
@@ -76,12 +76,13 @@ export function paymentConfirmationEmail(firstName: string): { subject: string; 
     html: layout(`
       <p style="font-size:16px;line-height:1.6;">Hi ${firstName},</p>
       <p style="font-size:16px;line-height:1.6;">
-        Your &pound;10 early access reservation is confirmed. That covers your
-        first two months of Avail and a founding place at the front of the queue.
+        Your &pound;5 Founding Waitlist reservation is confirmed. You'll receive
+        priority consideration for early access and be among the first to hear
+        about launch updates.
       </p>
       <p style="font-size:16px;line-height:1.6;">
-        When the app launches we'll email you everything you need to activate
-        your access. Nothing else to do for now.
+        We'll email you with launch updates and the next steps for early access.
+        Nothing else to do for now.
       </p>
       <p style="font-size:16px;line-height:1.6;">Thanks for backing Avail early.</p>
     `),

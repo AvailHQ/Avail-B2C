@@ -10,6 +10,7 @@ const productLinks = [
   { label: "Early access", href: "/#early-access" },
   { label: "How Avail works", href: "/#features" },
   { label: "Who it's for", href: "/#audiences" },
+  { label: "Why Avail", href: "/#why-avail" },
   { label: "FAQs", href: "/#faq" },
 ];
 

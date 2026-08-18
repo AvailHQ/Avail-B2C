@@ -1065,3 +1065,15 @@ link — but a local end-to-end run would hit the wrong product.
 1. Set `RESEND_API_KEY` / `EMAIL_FROM` on production and confirm a real delivery.
 2. Only then run the controlled real £5 payment and inspect Stripe, the webhook
    delivery, Convex state, and the success page.
+
+---
+
+## 2026-08-18 — Female physiology context section added to £5 main
+
+- Added the three-card “Most training tools overlook female physiology” section
+  to the existing £5 landing page, after the audience module.
+- Added a `Why Avail` footer anchor to the new section.
+- No Stripe, Convex, waitlist, price, Hero, audience-module or production
+  environment behavior was changed.
+- Verification: Vitest 73 passed; `oxlint`, production build and
+  `git diff --check` passed.

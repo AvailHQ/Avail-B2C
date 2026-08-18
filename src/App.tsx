@@ -15,6 +15,7 @@ import { Footer } from './components/landing/Footer';
 import { GymBenefitsSection } from './components/landing/GymBenefitsSection';
 import { Header } from './components/landing/Header';
 import { HeroSection } from './components/landing/HeroSection';
+import { WomenTrainingGapSection } from './components/landing/WomenTrainingGapSection';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { TermsPage } from './pages/TermsPage';
 import { SuccessPage } from './pages/SuccessPage';
@@ -273,6 +274,7 @@ function LandingPage() {
         />
         <FeaturesSection items={appFeatures} />
         <GymBenefitsSection />
+        <WomenTrainingGapSection />
         <FAQSection
           faqs={faqs}
           expandedFaq={expandedFaq}

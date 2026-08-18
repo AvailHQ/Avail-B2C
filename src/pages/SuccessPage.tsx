@@ -76,7 +76,7 @@ export function SuccessPage() {
               </h1>
 
               <p className="type-lead text-[#4F5B60]">
-                Your &pound;5 Founding Waitlist reservation is confirmed. You&rsquo;ll receive
+                Your $5 USD Founding Waitlist reservation is confirmed. You&rsquo;ll receive
                 priority consideration for early access and be among the first to hear
                 about launch updates.
               </p>

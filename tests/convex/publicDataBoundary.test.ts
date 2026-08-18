@@ -21,7 +21,7 @@ function paidArgs(overrides: Record<string, unknown> = {}) {
     stripePaymentIntentId: "pi_1",
     stripeCustomerId: "cus_1",
     amountPaid: 1000,
-    currency: "gbp",
+    currency: "usd",
     redemptionCodeCandidates: generateRedemptionCodeCandidates(),
     ...overrides,
   };
@@ -123,14 +123,15 @@ describe("public data boundaries", () => {
   });
 
   it("DATA-07: payment mutations are internal; only the intended queries are public", async () => {
-    for (const name of ["markPaid", "markRefunded", "markPendingPayment", "join"]) {
+    for (const name of ["markPaid", "markRefunded", "markPendingPayment"]) {
       expect((waitlistModule as any)[name].isInternal).toBe(true);
     }
 
     // The documented public surface stays public.
-    for (const name of ["checkPosition", "getBySessionId", "submitEarlyAccess"]) {
+    for (const name of ["checkPosition", "getBySessionId"]) {
       expect((waitlistModule as any)[name].isInternal).toBeFalsy();
     }
+    expect((waitlistModule as any).submitEarlyAccess).toBeUndefined();
   });
 });
 

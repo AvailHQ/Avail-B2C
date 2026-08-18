@@ -1079,3 +1079,24 @@ link — but a local end-to-end run would hit the wrong product.
   `git diff --check` passed.
 - Follow-up: reordered the landing page so the female-physiology context section
   appears before the audience/training-style section.
+
+---
+
+## 2026-08-18 — $5 paid-only waitlist conversion (local, not deployed)
+
+- Replaced the free name/email form and intermediary state with one direct
+  Stripe CTA: `Join the Founding Waitlist · $5 USD`.
+- Removed the public Convex `submitEarlyAccess` action and internal free `join`
+  mutation. New waitlist rows are created only by the signed Stripe payment
+  webhook; historical records remain untouched.
+- Changed backend entitlement validation to exactly `500` cents / `usd`.
+- Copy explains that Stripe may offer the customer an equivalent local-currency
+  amount. No fixed £3.50 claim is made because the converted amount can vary.
+- Updated confirmation-page, transactional-email and test copy to `$5 USD`.
+- Verification: Vitest 62 passed; `oxlint`, production build and
+  `git diff --check` passed.
+- **Not pushed or deployed:** the current live Payment Link is still the previous
+  GBP offer and `.env.local` still uses the retired £10 Sandbox link. Create new
+  $5 USD Sandbox and Live Payment Links with required name/email collection and
+  Adaptive Pricing before deployment. Production Resend configuration remains a
+  separate prerequisite for Avail confirmation-email delivery.

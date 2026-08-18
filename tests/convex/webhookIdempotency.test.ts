@@ -18,7 +18,7 @@ function paidArgs(overrides: Record<string, unknown> = {}) {
     stripePaymentIntentId: "pi_1",
     stripeCustomerId: "cus_1",
     amountPaid: 1000,
-    currency: "gbp",
+    currency: "usd",
     redemptionCodeCandidates: generateRedemptionCodeCandidates(),
     ...overrides,
   };

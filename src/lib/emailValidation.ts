@@ -1,5 +1,5 @@
 // Client-side lightweight email check for instant feedback. The authoritative
-// check (including MX lookup) runs server-side in the submitEarlyAccess action.
+// check (including MX lookup) is retained for historical/internal tooling.
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

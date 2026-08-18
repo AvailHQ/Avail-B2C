@@ -59,13 +59,11 @@ test.describe('WCAG A/AA', () => {
     await expectAccessible(page);
   });
 
-  test('waitlist validation state', async ({ page }) => {
+  test('paid waitlist CTA state', async ({ page }) => {
     await preparePage(page, '/#early-access');
-    await page.getByRole('button', { name: 'Continue to Reserve Your Spot' }).click();
-    await expect(page.getByRole('alert')).toBeVisible();
-    await expect(page.locator('#join-name')).toBeFocused();
-    await expect(page.locator('#join-name')).toHaveAttribute('aria-invalid', 'true');
-    await expect(page.locator('#join-email')).toHaveAttribute('aria-invalid', 'true');
+    const cta = page.getByRole('link', { name: 'Join the Founding Waitlist · $5 USD' });
+    await expect(cta).toBeVisible();
+    await expect(cta).toHaveAttribute('href', /^https:\/\/buy\.stripe\.com\//);
     await expectAccessible(page);
   });
 

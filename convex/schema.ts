@@ -6,7 +6,7 @@ import { v } from "convex/values";
  *
  * - email_only:      contact captured, no Stripe checkout started yet
  * - pending_payment: user has been sent to Stripe checkout, not confirmed
- * - paid:            Stripe confirmed the GBP 10 reservation
+ * - paid:            Stripe confirmed the USD 5 reservation
  * - refunded:        a paid reservation was reversed. Reservations are
  *                    non-refundable by policy, so this only covers exceptional
  *                    cases such as Stripe chargebacks / disputes.
@@ -35,8 +35,8 @@ export default defineSchema({
     stripeSessionId: v.optional(v.string()),
     stripePaymentIntentId: v.optional(v.string()),
     stripeCustomerId: v.optional(v.string()),
-    amountPaid: v.optional(v.number()), // minor units, e.g. pence
-    currency: v.optional(v.string()), // e.g. "gbp"
+    amountPaid: v.optional(v.number()), // minor currency units, e.g. cents
+    currency: v.optional(v.string()), // ISO currency, e.g. "usd"
     paidAt: v.optional(v.number()),
     refundedAt: v.optional(v.number()),
     // Total refunded so far, in minor units. Policy is that any refund revokes

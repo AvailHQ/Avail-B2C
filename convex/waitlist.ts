@@ -303,7 +303,7 @@ export const markRefunded = internalMutation({
     }
 
     // Policy (REF-03): any refund revokes the reservation, partial included.
-    // A partial refund is unusual here (fixed USD 5 product), so log it — the
+    // A partial refund is unusual here (fixed GBP 3.50 product), so log it — the
     // amount is recorded either way for follow-up.
     const isPartial =
       typeof args.amountRefunded === "number" &&

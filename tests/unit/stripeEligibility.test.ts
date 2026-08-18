@@ -7,8 +7,8 @@ import {
 } from "../../convex/stripeSecurity";
 
 const policy: StripePaymentPolicy = {
-  amount: 500,
-  currency: "usd",
+  amount: 350,
+  currency: "gbp",
   paymentLinkId: "plink_avail",
   livemode: false,
 };
@@ -16,8 +16,8 @@ const policy: StripePaymentPolicy = {
 const validSession: CheckoutSessionForValidation = {
   id: "cs_test_avail",
   payment_status: "paid",
-  amount_total: 500,
-  currency: "usd",
+  amount_total: 350,
+  currency: "gbp",
   payment_link: "plink_avail",
   livemode: false,
 };
@@ -31,7 +31,7 @@ describe("validateCheckoutSession", () => {
     ["missing_session_id", { id: undefined }],
     ["payment_not_paid", { payment_status: "unpaid" }],
     ["wrong_amount", { amount_total: 1 }],
-    ["wrong_currency", { currency: "gbp" }],
+    ["wrong_currency", { currency: "usd" }],
     ["wrong_payment_link", { payment_link: "plink_other" }],
     ["wrong_environment", { livemode: true }],
   ] as const)("rejects %s", (reason, patch) => {
@@ -44,7 +44,7 @@ describe("validateCheckoutSession", () => {
   it("accepts an expanded Payment Link object and normalizes currency case", () => {
     expect(
       validateCheckoutSession(
-        { ...validSession, currency: "USD", payment_link: { id: "plink_avail" } },
+        { ...validSession, currency: "GBP", payment_link: { id: "plink_avail" } },
         policy,
       ),
     ).toEqual({ ok: true });
@@ -52,7 +52,7 @@ describe("validateCheckoutSession", () => {
 });
 
 describe("loadStripePaymentPolicy", () => {
-  it("loads the fixed USD 5 policy with an explicit environment", () => {
+  it("loads the fixed GBP 3.50 policy with an explicit environment", () => {
     expect(
       loadStripePaymentPolicy({
         STRIPE_PAYMENT_LINK_ID: " plink_avail ",

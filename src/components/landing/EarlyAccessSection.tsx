@@ -77,11 +77,11 @@ export function EarlyAccessSection() {
             )}
 
             <a href={STRIPE_PAYMENT_LINK} className={primaryButtonClass}>
-              Join the Founding Waitlist · $5 USD <ArrowRight size={16} aria-hidden="true" />
+              Join the Founding Waitlist · £3.50 GBP <ArrowRight size={16} aria-hidden="true" />
             </a>
 
             <p className="type-caption mx-auto mt-3 max-w-[680px] text-[#64707D]">
-              One-time $5 USD · Stripe may offer an equivalent local-currency amount ·
+              One-time £3.50 GBP · Stripe may offer an equivalent local-currency amount ·
               Non-refundable, except where required by law
             </p>
           </div>

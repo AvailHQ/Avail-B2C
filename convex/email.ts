@@ -62,7 +62,7 @@ export function welcomeEmail(firstName: string): { subject: string; html: string
       </p>
       <p style="font-size:16px;line-height:1.6;">
         You can secure your place on the Founding Waitlist for a one-time
-        $5 USD and receive priority consideration for early access.
+        £3.50 GBP and receive priority consideration for early access.
         Reservations are non-refundable, except where required by law.
       </p>
       <p style="font-size:16px;line-height:1.6;">We'll be in touch as launch gets closer.</p>
@@ -76,7 +76,7 @@ export function paymentConfirmationEmail(firstName: string): { subject: string; 
     html: layout(`
       <p style="font-size:16px;line-height:1.6;">Hi ${firstName},</p>
       <p style="font-size:16px;line-height:1.6;">
-        Your $5 USD Founding Waitlist reservation is confirmed. You'll receive
+        Your £3.50 GBP Founding Waitlist reservation is confirmed. You'll receive
         priority consideration for early access and be among the first to hear
         about launch updates.
       </p>

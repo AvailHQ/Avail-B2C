@@ -1110,3 +1110,27 @@ link — but a local end-to-end run would hit the wrong product.
   readability.
 - Section-order follow-up: moved the female-physiology context section directly
   below the paid waitlist card, ahead of the feature-image component.
+
+---
+
+## 2026-08-18 — Live paid-waitlist price changed to £3.50 GBP (local code)
+
+- Stripe Live Payment Link `plink_1U5XmqPTTHxF0PGp2fFVBNDU` was visually
+  confirmed active with product **AVAIL · £3.50 GBP**. Its public checkout URL
+  remains `https://buy.stripe.com/5kQaEZ7SKcnG1909KecQU00`.
+- Changed the server-side Stripe eligibility policy from `500 / usd` to exactly
+  `350 / gbp`. The signed webhook will therefore reject payments from the wrong
+  amount, currency, Payment Link or live/test environment.
+- Updated the paid-waitlist CTA, disclosure, success page, confirmation email,
+  schema comments and automated tests to use **£3.50 GBP** consistently.
+- Adaptive Pricing remains a Stripe checkout concern: eligible customers may
+  be offered an equivalent local-currency amount, while Avail's canonical
+  product and webhook policy remain £3.50 GBP.
+- The Payment Link ID did not change, so the production
+  `STRIPE_PAYMENT_LINK_ID` value requires no replacement. Production Convex
+  must still receive the updated code before real £3.50 payments are accepted.
+- This entry records local implementation only; it does not claim a GitHub push,
+  Convex deployment or Vercel production deployment.
+- Verification completed: Vitest **62/62**, Playwright **26/26** across desktop
+  and mobile, `oxlint`, production build, Convex typecheck and
+  `git diff --check` all passed.

@@ -45,7 +45,7 @@ test.describe('success page states', () => {
     await page.goto(`/success?session_id=${SESSION}`);
 
     await expect(page.getByRole('heading', { name: /You’re in, Robin\./ })).toBeVisible();
-    await expect(page.getByText(/\$5 USD Founding Waitlist reservation is confirmed/)).toBeVisible();
+    await expect(page.getByText(/£3\.50 GBP Founding Waitlist reservation is confirmed/)).toBeVisible();
     await expect(page.getByText(/We’ve sent a confirmation to/)).toBeVisible();
     await expect(page.getByText('robin@example.com')).toBeVisible();
   });
@@ -114,7 +114,7 @@ test.describe('success page states', () => {
     await expect(page.getByRole('heading', { name: /You’re in, Robin\./ })).toBeVisible({
       timeout: 10_000,
     });
-    await expect(page.getByText(/\$5 USD Founding Waitlist reservation is confirmed/)).toBeVisible();
+    await expect(page.getByText(/£3\.50 GBP Founding Waitlist reservation is confirmed/)).toBeVisible();
   });
 
   test('UI-06: a refunded reservation shows no paid confirmation', async ({ page }) => {

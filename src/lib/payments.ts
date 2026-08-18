@@ -1,4 +1,4 @@
-// The Stripe Payment Link for the one-time USD 5 paid Founding Waitlist.
+// The Stripe Payment Link for the one-time GBP 3.50 paid Founding Waitlist.
 // Override per environment with VITE_STRIPE_PAYMENT_LINK; falls back to the
 // sandbox test link so the flow is usable in development.
 export const STRIPE_PAYMENT_LINK =

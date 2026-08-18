@@ -101,8 +101,8 @@ function LandingPage() {
       <main className="relative z-10 flex flex-col [&>*]:my-[50px]">
         <HeroSection />
         <EarlyAccessSection />
-        <FeaturesSection items={appFeatures} />
         <WomenTrainingGapSection />
+        <FeaturesSection items={appFeatures} />
         <GymBenefitsSection />
         <FAQSection
           faqs={faqs}

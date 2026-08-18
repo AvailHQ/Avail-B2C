@@ -1108,3 +1108,5 @@ link — but a local end-to-end run would hit the wrong product.
   feature component's full page-shell width, 30px radius and 640/690px
   responsive minimum height while keeping its content constrained for
   readability.
+- Section-order follow-up: moved the female-physiology context section directly
+  below the paid waitlist card, ahead of the feature-image component.

@@ -31,3 +31,6 @@ dist-ssr
 playwright-report/
 test-results/
 .env*
+
+.ux-audit-mobile
+.ux-audit-results

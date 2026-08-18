@@ -5,6 +5,14 @@ import { v } from "convex/values";
 const FOUNDING_ATHLETES_COUNTER_KEY = "foundingAthletes";
 const FOUNDING_ATHLETES_BASELINE = 347;
 
+async function readFoundingAthletesCount(ctx: any): Promise<number> {
+  const counter = await ctx.db
+    .query("publicCounters")
+    .withIndex("by_key", (q: any) => q.eq("key", FOUNDING_ATHLETES_COUNTER_KEY))
+    .unique();
+  return counter?.value ?? FOUNDING_ATHLETES_BASELINE;
+}
+
 async function incrementFoundingAthletesCount(ctx: any): Promise<number> {
   const counter = await ctx.db
     .query("publicCounters")
@@ -447,4 +455,16 @@ export const getStats = internalQuery({
       amountReserved,
     };
   },
+});
+
+/**
+ * Founding-athlete count for social proof on the landing page.
+ *
+ * Public but deliberately narrow: it exposes a single aggregate number and no
+ * reservation data. The value is server-owned — it is incremented in the same
+ * transaction that records a payment — so the browser cannot inflate it.
+ */
+export const getPublicWaitlistCount = query({
+  args: {},
+  handler: async (ctx: any) => ({ count: await readFoundingAthletesCount(ctx) }),
 });

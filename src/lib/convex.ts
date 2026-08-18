@@ -29,3 +29,14 @@ export async function getReservationBySession(
   if (!client) return null;
   return client.query(api.waitlist.getBySessionId, { stripeSessionId });
 }
+
+/**
+ * Server-owned founding-athlete count, for social proof on the landing page.
+ * Returns null when Convex is not configured or the lookup fails, so the caller
+ * can omit the line entirely rather than render a placeholder number.
+ */
+export async function getFoundingAthleteCount(): Promise<number | null> {
+  if (!client) return null;
+  const result = await client.query(api.waitlist.getPublicWaitlistCount, {});
+  return typeof result?.count === 'number' ? result.count : null;
+}

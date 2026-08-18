@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react';
 import { ArrowRight, CreditCard, ShieldCheck } from 'lucide-react';
 import { STRIPE_PAYMENT_LINK } from '../../lib/payments';
+import { getFoundingAthleteCount } from '../../lib/convex';
 import { gradientText, pageShell, primaryButtonClass } from './shared';
 
 const assurances = [
@@ -16,6 +18,21 @@ const assurances = [
 ];
 
 export function EarlyAccessSection() {
+  const [foundingCount, setFoundingCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getFoundingAthleteCount()
+      .then((count) => {
+        if (!cancelled) setFoundingCount(count);
+      })
+      // Social proof is decorative: on failure the line is simply omitted.
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <section id="early-access" className={`${pageShell} scroll-mt-24`}>
       <div className="fade-up w-full">
@@ -50,6 +67,15 @@ export function EarlyAccessSection() {
           </div>
 
           <div className="fade-up fade-up-delay-3 mx-auto mt-10 w-full max-w-[600px]">
+            {foundingCount !== null && (
+              <p className="type-caption mb-4 font-bold tracking-[0.4px] text-[#556166]">
+                <span className={`${gradientText} text-base font-extrabold tabular-nums`}>
+                  {foundingCount.toLocaleString('en-GB')}
+                </span>{' '}
+                founding athletes have already joined
+              </p>
+            )}
+
             <a href={STRIPE_PAYMENT_LINK} className={primaryButtonClass}>
               Join the Founding Waitlist · $5 USD <ArrowRight size={16} aria-hidden="true" />
             </a>

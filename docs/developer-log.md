@@ -1100,3 +1100,7 @@ link — but a local end-to-end run would hit the wrong product.
   $5 USD Sandbox and Live Payment Links with required name/email collection and
   Adaptive Pricing before deployment. Production Resend configuration remains a
   separate prerequisite for Avail confirmation-email delivery.
+- Hero follow-up: changed the hierarchy to `Learn Your Body.` followed by the
+  smaller, non-wrapping `Be Stronger. Train Smarter.` line. Replaced the
+  unsupported `500+ Early Users` metric with the product-verifiable `3 Core
+  Signals` (cycle context, training load and recovery).

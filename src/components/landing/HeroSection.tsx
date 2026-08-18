@@ -10,10 +10,13 @@ export function HeroSection() {
         Performance, built for women
       </p>
 
-      <h1 className="fade-up fade-up-delay-1 mx-auto mb-6 max-w-[900px] text-[clamp(2.5rem,1.75rem+3.7vw,5.125rem)] leading-[1.02] font-black tracking-[-0.035em] text-[#1B1F23]">
-        Be Stronger
-        <br />
-        <span className={gradientText}>Train Smarter</span>
+      <h1 className="fade-up fade-up-delay-1 mx-auto mb-6 max-w-[1100px] font-black tracking-[-0.035em] text-[#1B1F23]">
+        <span className="block text-[clamp(2.7rem,1.75rem+3.7vw,5.125rem)] leading-[1.02]">
+          Learn Your Body.
+        </span>
+        <span className={`${gradientText} mt-2 block whitespace-nowrap text-[clamp(1.25rem,0.72rem+2.65vw,3.6rem)] leading-[1.08]`}>
+          Be Stronger. Train Smarter.
+        </span>
       </h1>
 
       <p className="type-lead fade-up fade-up-delay-2 mx-auto mb-9 max-w-[680px] font-normal text-[#56646B]">
@@ -24,7 +27,7 @@ export function HeroSection() {
       <div className="fade-up fade-up-delay-3">
         <div className="mx-auto grid max-w-[760px] grid-cols-3 gap-0">
           {[
-            ["500+", "Early users"],
+            ["3", "Core signals"],
             ["+18%", "Performance gain"],
             ["95%", "Retention rate"],
           ].map(([value, label], index) => (
@@ -44,7 +47,7 @@ export function HeroSection() {
           ))}
         </div>
         <p className="type-caption mt-4 text-[#556166]">
-          Based on results from early Avail testing.
+          Three core signals: cycle context, training load and recovery.
         </p>
       </div>
     </section>

@@ -6,6 +6,7 @@
   - `/var/folders/_2/m58mwf8507dcc9hqd0cb370r0000gn/T/codex-clipboard-8c81977d-529c-49e8-ba44-17a6c7aa2fcb.png` (reference Hero)
   - `/var/folders/_2/m58mwf8507dcc9hqd0cb370r0000gn/T/codex-clipboard-8cc2e32f-9eb2-4ed7-9144-951b31819a3c.png` (reference primary heading crop)
 - Browser-rendered implementation: `qa-assets/hero-usd5-desktop.png`
+- Matched-card evidence: `qa-assets/waitlist-matched-card-desktop.png`
 - Implementation: `http://localhost:4173/`
 - Viewport/state: 1272 × 716 CSS px, desktop, 1× density, landing-page initial state.
 
@@ -15,6 +16,7 @@
 - `Be Stronger. Train Smarter.` is smaller, gradient-treated and visibly remains one line.
 - `500+ Early Users` is replaced by the verifiable product structure `3 Core Signals`.
 - Focused region evidence is the viewport capture itself; it contains the full Hero and readable metric row, so another crop was unnecessary.
+- The paid waitlist card and following feature component now share the same page-shell width, 30px radius and 640/690px responsive minimum height; their internal content widths remain intentionally different for readability.
 
 ## Required fidelity surfaces
 
@@ -41,5 +43,6 @@
 1. Original Hero used `Be Stronger / Train Smarter` at equal scale and displayed unsupported `500+ Early Users`.
 2. Rebuilt it as primary `Learn Your Body.` plus a smaller non-wrapping `Be Stronger. Train Smarter.` line.
 3. Replaced the user-count claim with `3 Core Signals`, captured the browser result, and verified desktop/mobile overflow and accessibility.
+4. Expanded the paid waitlist card to match the following feature component, compared both at the same desktop viewport, and re-ran desktop/mobile accessibility and overflow checks.
 
 final result: blocked

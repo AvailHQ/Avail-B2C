@@ -1104,3 +1104,7 @@ link — but a local end-to-end run would hit the wrong product.
   smaller, non-wrapping `Be Stronger. Train Smarter.` line. Replaced the
   unsupported `500+ Early Users` metric with the product-verifiable `3 Core
   Signals` (cycle context, training load and recovery).
+- Waitlist-card follow-up: matched the paid waitlist card to the following
+  feature component's full page-shell width, 30px radius and 640/690px
+  responsive minimum height while keeping its content constrained for
+  readability.

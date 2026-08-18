@@ -1,39 +1,64 @@
-import { ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, CreditCard, ShieldCheck } from 'lucide-react';
 import { STRIPE_PAYMENT_LINK } from '../../lib/payments';
-import { pageShell, primaryButtonClass } from './shared';
+import { gradientText, pageShell, primaryButtonClass } from './shared';
+
+const assurances = [
+  {
+    icon: CreditCard,
+    title: 'Stripe handles the payment',
+    body: 'Your name and email are collected securely at checkout. Card details never touch Avail.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Only confirmed payments count',
+    body: 'Your founding place is recorded once Stripe confirms the payment — nothing before that.',
+  },
+];
 
 export function EarlyAccessSection() {
   return (
     <section id="early-access" className={`${pageShell} scroll-mt-24`}>
       <div className="fade-up w-full">
-        <div className="mx-auto flex min-h-[640px] w-full flex-col justify-center rounded-[30px] border border-[#17333A]/10 bg-white/78 px-6 py-10 text-center shadow-[0_18px_55px_rgba(23,51,58,0.07)] tablet:px-12 tablet:py-14 air:min-h-[690px]">
+        <div className="mx-auto flex w-full flex-col justify-center rounded-[22px] border border-[#17333A]/9 bg-white/72 px-6 py-14 text-center shadow-[0_12px_36px_rgba(23,51,58,0.055)] tablet:px-12 tablet:py-16">
           <p className="type-caption font-extrabold tracking-[1.6px] text-[#286D86] uppercase">
             Paid Founding Waitlist
           </p>
-          <h2 className="type-section-title mx-auto mt-3 max-w-[700px] font-black text-[#17333A] uppercase">
-            Secure early access.<br />Be first to train with Avail.
+
+          <h2 className="type-section-title fade-up fade-up-delay-1 mx-auto mt-3 max-w-[700px] font-black text-[#17333A]">
+            Secure early access.
+            <span className={`mt-1 block ${gradientText}`}>Be first to train with Avail.</span>
           </h2>
-          <p className="type-body mx-auto mt-5 max-w-[650px] text-[#64707D]">
-            Join the paid Founding Waitlist for priority consideration for early access and launch updates.
+
+          <p className="type-body fade-up fade-up-delay-2 mx-auto mt-5 max-w-[680px] text-[#64707D]">
+            Join the paid Founding Waitlist for priority consideration for early access and launch
+            updates.
           </p>
 
-          <div className="mx-auto mt-7 flex max-w-[600px] flex-col justify-center gap-3 text-left text-sm font-bold text-[#405158] tablet:flex-row tablet:gap-7">
-            <span className="flex items-center gap-2">
-              <CheckCircle2 size={17} className="shrink-0 text-[#38897C]" aria-hidden="true" />
-              Stripe securely collects your name and email
-            </span>
-            <span className="flex items-center gap-2">
-              <CheckCircle2 size={17} className="shrink-0 text-[#38897C]" aria-hidden="true" />
-              Only confirmed payments join the waitlist
-            </span>
+          <div className="fade-up fade-up-delay-2 mx-auto mt-9 grid w-full max-w-[760px] gap-4 text-left tablet:grid-cols-2">
+            {assurances.map(({ icon: Icon, title, body }) => (
+              <article
+                key={title}
+                className="rounded-[22px] border border-[#17333A]/9 bg-white/72 p-6 shadow-[0_12px_36px_rgba(23,51,58,0.055)]"
+              >
+                <span className="flex size-11 items-center justify-center rounded-full bg-[#6FBF9E]/16 text-[#28766D]">
+                  <Icon size={21} aria-hidden="true" />
+                </span>
+                <h3 className="mt-5 text-lg leading-6 font-extrabold text-[#17333A]">{title}</h3>
+                <p className="mt-3 text-sm leading-6 text-[#64707D]">{body}</p>
+              </article>
+            ))}
           </div>
 
-          <a href={STRIPE_PAYMENT_LINK} className={`${primaryButtonClass} mx-auto mt-8 max-w-[600px]`}>
-            Join the Founding Waitlist · $5 USD <ArrowRight size={16} />
-          </a>
-          <p className="type-caption mx-auto mt-3 max-w-[900px] text-[#64707D]">
-            One-time $5 USD · Stripe may offer an equivalent local-currency amount · Non-refundable, except where required by law
-          </p>
+          <div className="fade-up fade-up-delay-3 mx-auto mt-10 w-full max-w-[600px]">
+            <a href={STRIPE_PAYMENT_LINK} className={primaryButtonClass}>
+              Join the Founding Waitlist · $5 USD <ArrowRight size={16} aria-hidden="true" />
+            </a>
+
+            <p className="type-caption mx-auto mt-3 max-w-[680px] text-[#64707D]">
+              One-time $5 USD · Stripe may offer an equivalent local-currency amount ·
+              Non-refundable, except where required by law
+            </p>
+          </div>
         </div>
       </div>
     </section>

@@ -5,6 +5,27 @@ Each entry notes the date, who did the work, what was done, and the outcome.
 
 ---
 
+## 2026-09-19 — Simplify the paid waitlist section
+
+- **Author:** Codex, via Codex desktop
+- **Scope:** Remove the two payment-assurance cards from the paid Founding
+  Waitlist section.
+
+### Changes
+
+- Removed the “Stripe handles the payment” and “Only confirmed payments count”
+  cards, including their supporting copy and icons.
+- Removed the now-unused assurance data and icon imports.
+- Kept the founding-athlete count, Stripe checkout button, and payment terms
+  intact.
+
+### Verification performed
+
+- Confirmed the updated section visually in the local site.
+- `npm run build` passes.
+
+---
+
 ## 2026-08-16 — Stripe end-to-end test (sandbox) + personalized success page
 
 - **Author:** Claude Opus 4.8 (`claude-opus-4-8`), via Claude Code

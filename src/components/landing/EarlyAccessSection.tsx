@@ -1,21 +1,8 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, CreditCard, ShieldCheck } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { STRIPE_PAYMENT_LINK } from '../../lib/payments';
 import { getFoundingAthleteCount } from '../../lib/convex';
 import { gradientText, pageShell, primaryButtonClass } from './shared';
-
-const assurances = [
-  {
-    icon: CreditCard,
-    title: 'Stripe handles the payment',
-    body: 'Your name and email are collected securely at checkout. Card details never touch Avail.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Only confirmed payments count',
-    body: 'Your founding place is recorded once Stripe confirms the payment — nothing before that.',
-  },
-];
 
 export function EarlyAccessSection() {
   const [foundingCount, setFoundingCount] = useState<number | null>(null);
@@ -50,21 +37,6 @@ export function EarlyAccessSection() {
             Join the paid Founding Waitlist for priority consideration for early access and launch
             updates.
           </p>
-
-          <div className="fade-up fade-up-delay-2 mx-auto mt-9 grid w-full max-w-[760px] gap-4 text-left tablet:grid-cols-2">
-            {assurances.map(({ icon: Icon, title, body }) => (
-              <article
-                key={title}
-                className="rounded-[22px] border border-[#17333A]/9 bg-white/72 p-6 shadow-[0_12px_36px_rgba(23,51,58,0.055)]"
-              >
-                <span className="flex size-11 items-center justify-center rounded-full bg-[#6FBF9E]/16 text-[#28766D]">
-                  <Icon size={21} aria-hidden="true" />
-                </span>
-                <h3 className="mt-5 text-lg leading-6 font-extrabold text-[#17333A]">{title}</h3>
-                <p className="mt-3 text-sm leading-6 text-[#64707D]">{body}</p>
-              </article>
-            ))}
-          </div>
 
           <div className="fade-up fade-up-delay-3 mx-auto mt-10 w-full max-w-[600px]">
             {foundingCount !== null && (

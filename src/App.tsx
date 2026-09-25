@@ -1,76 +1,13 @@
-import { useEffect, useState } from 'react';
-import {
-  Activity,
-  Calendar,
-  Share2,
-  Shield,
-} from 'lucide-react';
+import { useEffect } from 'react';
 import { EarlyAccessSection } from './components/landing/EarlyAccessSection';
 import { ConsentAwareAnalytics } from './components/ConsentAwareAnalytics';
-import { FAQSection } from './components/landing/FAQSection';
-import { FeaturesSection } from './components/landing/FeaturesSection';
-import { Footer } from './components/landing/Footer';
-import { GymBenefitsSection } from './components/landing/GymBenefitsSection';
 import { Header } from './components/landing/Header';
 import { HeroSection } from './components/landing/HeroSection';
-import { WomenTrainingGapSection } from './components/landing/WomenTrainingGapSection';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { TermsPage } from './pages/TermsPage';
 import { SuccessPage } from './pages/SuccessPage';
 
-const appFeatures = [
-  {
-    icon: <Calendar size={22} />,
-    name: 'Smart Schedule',
-    desc: 'Unify training sessions, matches, physio appointments and rest days into a single adaptive calendar you can search in seconds.',
-  },
-  {
-    icon: <Activity size={22} />,
-    name: 'Recovery Insights',
-    desc: 'Track load, HRV, sleep quality and injury history. Avail learns your patterns and flags when you need more recovery time.',
-  },
-  {
-    icon: <Shield size={22} />,
-    name: 'Private by Design',
-    desc: 'Your health and performance data belongs to you. Granular controls over what you share, with coaches and with your team.',
-  },
-  {
-    icon: <Share2 size={22} />,
-    name: 'Integrations',
-    desc: 'Connects with Strava, Garmin, MyFitnessPal, Notion, Google Calendar and more - wherever your athletic life already lives.',
-  },
-];
-
-const faqs = [
-  {
-    q: 'What makes Avail different from other fitness apps?',
-    a: "Avail is the first performance app specifically designed around female physiology. Every feature - from training programming to load management - is built on women's data and hormonal science, not generic fitness trends.",
-  },
-  {
-    q: 'How does the cycle tracking work? Do I have to sync my calendar?',
-    a: 'Cycle tracking is optional and fully private. You can sync your calendar, log manually, or connect wearables. All tracking is encrypted and never shared.',
-  },
-  {
-    q: "What if I don't have a regular cycle or use hormonal contraception?",
-    a: "Avail works for everyone. Hormonal contraception changes your cycle patterns - we account for that. Irregular cycles? We adapt. The app's recovery and load management features still apply.",
-  },
-  {
-    q: 'Can I use Avail without a gym membership?',
-    a: 'Absolutely. Avail works with any training environment - gyms, home workouts, sports. While we partner with gyms, the core app is designed for independent users too.',
-  },
-  {
-    q: 'What data do you collect and how is it used?',
-    a: 'We collect training data and optional cycle information to power personalized recommendations. Your data is encrypted, private, and never sold. We use aggregate data to improve our female-focused training algorithms.',
-  },
-  {
-    q: 'When will the full app launch?',
-    a: "We're launching in Q4 2026. Early access members get the app 4 weeks before public launch, plus a lifetime discount. You'll shape the app with your feedback during beta.",
-  },
-];
-
 function LandingPage() {
-  const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
-
   useEffect(() => {
     const scrollToHashTarget = () => {
       const id = window.location.hash.slice(1);
@@ -101,16 +38,7 @@ function LandingPage() {
       <main className="relative z-10 flex flex-col [&>*]:my-[50px]">
         <HeroSection />
         <EarlyAccessSection />
-        <WomenTrainingGapSection />
-        <FeaturesSection items={appFeatures} />
-        <GymBenefitsSection />
-        <FAQSection
-          faqs={faqs}
-          expandedFaq={expandedFaq}
-          onToggleFaq={(index) => setExpandedFaq(expandedFaq === index ? null : index)}
-        />
       </main>
-      <Footer />
     </div>
   );
 }

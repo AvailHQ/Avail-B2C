@@ -49,16 +49,6 @@ test.describe('WCAG A/AA', () => {
     await expectAccessible(page);
   });
 
-  test('FAQ expanded state', async ({ page }) => {
-    await preparePage(page, '/#faq');
-    const firstQuestion = page.getByRole('button', {
-      name: 'What makes Avail different from other fitness apps?',
-    });
-    await firstQuestion.click();
-    await expect(firstQuestion).toHaveAttribute('aria-expanded', 'true');
-    await expectAccessible(page);
-  });
-
   test('paid waitlist CTA state', async ({ page }) => {
     await preparePage(page, '/#early-access');
     // The separator is decorative, so the accessible name is the same at every

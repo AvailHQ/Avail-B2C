@@ -5,6 +5,29 @@ Each entry notes the date, who did the work, what was done, and the outcome.
 
 ---
 
+## 2026-09-25 — Reduce the landing page to the MVP entry point
+
+- **Author:** Codex, via Codex desktop
+- **Scope:** Keep only the landing-page header, hero, and paid Founding Waitlist.
+
+### Changes
+
+- Removed the training-gap, feature, audience, FAQ, and footer sections from the
+  landing page.
+- Removed the unused landing-page data, state, icons, and component imports.
+- Removed the obsolete FAQ accessibility test while retaining coverage for the
+  landing page, paid waitlist, privacy page, and terms page.
+- Kept the standalone privacy, terms, and payment-success routes, along with the
+  cookie-consent mechanism required by the live payment flow.
+
+### Verification performed
+
+- `npm run lint` passes.
+- `npm run build` passes.
+- `git diff --check` passes.
+
+---
+
 ## 2026-09-19 — Simplify the paid waitlist section
 
 - **Author:** Codex, via Codex desktop
